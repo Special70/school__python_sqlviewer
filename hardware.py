@@ -32,6 +32,19 @@ def exiting (num):
     else:
         print("Returning to Previous Menu...")
         time.sleep(2.5)
+
+def print_table(table_query: str, extra_spacing: int = 0):
+    query = cursor.execute(table_query)
+    col_list = [desc[0] for desc in query.description][1:]
+
+    for col in col_list:
+        print(str(col).replace("_"," ").title().ljust(30+extra_spacing)+"|",end="")
+    print()
+    for row in query:
+        # print it in a specific way
+        print(
+            ''.join([str(row[i]).ljust(30+extra_spacing)+"|" for i in range(1, len(list(col_list))+1)])
+        )
     
     
     
@@ -147,6 +160,7 @@ while True:
                                 case 1:
                                     #this prints all available products
                                     print("Display all Products")
+                                    print_table("select product_name, product_details, type, price from products", 20)
                                     time.sleep(2.5)
                                 case 2:
                                     while True:
@@ -158,14 +172,17 @@ while True:
                                             case 1:
                                                 #display all rows in inventory table
                                                 print("Display All Inventory")
+                                                print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id)", 20)
                                                 time.sleep(2.5)
                                             case 2:
                                                 #display all rows where stock > 0
                                                 print("Display Products In-Stock")
+                                                print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id) where stock > 0", 20)
                                                 time.sleep(2.5)
                                             case 3:
                                                 #display all rows where stock == 0
                                                 print("Display Products Out of Stock")
+                                                print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id) where stock == 0", 20)
                                                 time.sleep(2.5)
                                             case _:
                                                 exiting(0)
@@ -187,10 +204,12 @@ while True:
                                 case 1:
                                     #print all customer records
                                     print("Display All Customer Records")
+                                    print_table("select * from customers")
                                     time.sleep(2.5)
                                 case 2:
                                     #print all employee records
                                     print("Display All Employee Records")
+                                    print_table("select * from employees")
                                     time.sleep(2.5)
                                 case _:
                                     exiting(0)
@@ -200,6 +219,7 @@ while True:
                         #user inputs an order_id
                         #displays the corresponding transaction and order_details row.
                         print("View Purchase List")
+                        print_table("employees", "select * from employees")
                         time.sleep(2.5)
                     case _:
                         exiting(1)
