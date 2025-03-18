@@ -11,6 +11,7 @@ cursor = connection.cursor()
 os.system('cls')
 
 choice_list = [0,1,2,3,4] #stores the menu choices
+product_types = ['TOOLS', 'UTILITY', 'ELECTRONICS', 'CONSTRUCTION']
 
 def check(choice_list): #for checking if input is valid
     while True:
@@ -35,7 +36,7 @@ def exiting (num):
 
 def print_table(table_query: str, extra_spacing: int = 0):
     query = cursor.execute(table_query)
-    col_list = [desc[0] for desc in query.description][1:]
+    col_list = [desc[0] for desc in query.description] #removed the [:1] cuz it removes the emp_id and etc
 
     for col in col_list:
         print(str(col).replace("_"," ").title().ljust(30+extra_spacing)+"|",end="")
@@ -43,10 +44,51 @@ def print_table(table_query: str, extra_spacing: int = 0):
     for row in query:
         # print it in a specific way
         print(
-            ''.join([str(row[i]).ljust(30+extra_spacing)+"|" for i in range(1, len(list(col_list))+1)])
+            ''.join([str(row[i]).ljust(30+extra_spacing)+"|" for i in range(len(list(col_list)))])
         )
     
+def exist_data (table, table_column, data): #checks if one data exists in a table, usually if supplier_id is in table or if employee_id in table
+    cursor.execute(f"select count(*) from {table} where {table_column} = {data}")
+    exists = cursor.fetchone()[0]
+    if exists:
+        return 1
+    else:
+        print(f"{data} is invalid.")
+        return 0
     
+def add_product ():
+    os.system('cls')
+    print_table("select * from suppliers")
+    product_name = input("Enter Product Name: ")
+    while True:
+        supplier_id = int(input("Enter Supplier ID: "))
+        if supplier_id < 1:
+            print(f"{supplier_id} is invalid.")
+            continue
+        check = exist_data("suppliers", "supplier_id", supplier_id)
+        if check == 0:
+            continue
+        else: 
+            break
+    product_dsc = input("Enter Product Description: ")
+    print_table("select distinct type from products;")
+    while True:
+        product_type = input("Enter Product Type: ")
+        if product_type.upper() not in product_types:
+            print(f"{product_type} is invalid.")
+            continue
+        else: 
+            break
+    product_price = input("Enter Product Price: ")
+    product_stock = input("Enter Product Stock: ")
+    #for adding into products
+    cursor.execute("insert into products (product_name, supplier_id, product_details, type, price) values (?, ?, ?, ?, ?);", (product_name, supplier_id, product_dsc, product_type, product_price))
+    cursor.execute("select product_id from products where product_name = ?;", (product_name,));
+    product_id = cursor.fetchone()[0]
+    #for adding into inventory
+    cursor.execute("insert into inventory (product_id, stock) values (?, ?);", (product_id, product_stock))
+    print_table("select * from inventory;")
+    connection.commit()
     
 print("Welcome to Joe MV Enterprise!\n\t[1] Start the Program\n\t[0] Terminate the Program")
 choice = check(choice_list[:2])
@@ -69,11 +111,12 @@ while True:
                         #this is a description of the business. may edit
                         time.sleep(2.5) 
                     case 2:
-                        #this prints all available products
-                        print("View available products.")
-                        time.sleep(2.5)
+                        print("display all products")
+                        print_table("select * from products;")
+                        time.sleep(10)
                     case 3:
-                        #display all available products
+                        print_table("select * from products;")
+                        print_table("select * from suppliers")
                         #user inputs one product at a time.
                         #product id and quantity
                         #payment method
@@ -82,8 +125,7 @@ while True:
                         print("Place an Order")
                         time.sleep(2.5)
                     case _:
-                        exiting(1)
-                        
+                        exiting(1)   
         elif entity_type == 2: #if user is an employee
             # while True: #for security / confirm if they are employee
             #print("Enter Employee ID: ")
@@ -98,55 +140,89 @@ while True:
                         while True:
                             #this opens a submenu
                             os.system('cls')
-                            print("CONFIGURE DATABASE\n\t[1] Add New Product\n\t[2] Update Product\n\t[3] Add Information\n\t[4] Update Information\n\t[0] Return to Previous Menu")
-                            update_choice = employee_choice = check(choice_list)
+                            print("CONFIGURE DATABASE\n\t[1] Configure Product\n\t[2] Configure People Data\n\t[0] Return to Previous Menu")
+                            update_choice = check(choice_list[:3])
                             match update_choice:
                                 case 1:
-                                    #display suppliers table
-                                    #dapat supplier_id is in suppliers table. if not, return error.
-                                    #this will let user input to product, inventory, and suppliers table. another query to add
-                                    #input product_name, supplier_id, product_details, type, price, stock, suppliers_name
-                                    print("Add new Product ...")
-                                    time.sleep(2.5)
-                                case 2:
-                                    #display products table
-                                    #enter product id, then update after user inputs product_name, etc...
-                                    #update inventory
-                                    print("Update Products..")
-                                    time.sleep(2.5)
-                                case 3:
                                     while True:
                                         os.system('cls')
-                                        print("ADD INFORMATION\n\t[1] Employee Records\n\t[2] Supplier Records\n\t[0] Return to Previous Menu")
-                                        config_choice = check(choice_list[:3])
-                                        match config_choice:
+                                        print("CONFIGURE PRODUCT\n\t[1] Add Product\n\t[2] Update Product\n\t[3] Delete Product\n\t[0] Return to Previous Menu")
+                                        config_prod = check(choice_list[:4])
+                                        match config_prod:
                                             case 1:
-                                                print("Adding Employee Records...")
+                                                add_product()
                                                 time.sleep(2.5)
                                             case 2:
-                                                print("Adding Supplier Records...")
-                                                time.sleep(2.5)
-                                            case _:
-                                                exiting(0)
-                                                break
-                                case 4:
-                                    while True:
-                                        os.system('cls')
-                                        print("UPDATE INFORMATION\n\t[1] Employee Records\n\t[2] Customer Records\n\t[3] Supplier Records\n\t[0] Return to Previous Menu")
-                                        config_choice = check(choice_list[:4])
-                                        match config_choice:
-                                            case 1:
-                                                print("Updating Employee Records...")
-                                                time.sleep(2.5)
-                                            case 2:
-                                                print("Updating Employee Records...")
-                                                time.sleep(2.5)
+                                                print("Update Product")
+                                                time.sleep(2)
                                             case 3:
-                                                print("Updating Supplier Records...")
-                                                time.sleep(2.5)
+                                                print("Delete product")
+                                                time.sleep(2)
                                             case _:
                                                 exiting(0)
                                                 break
+                                case 2:
+                                    os.system('cls')
+                                    print("CONFIGURE PEOPLE DATA\n\t[1] Add People Data\n\t[2] Update People Data\n\t[3] Delete People Data\n\t[0] Return to Previous Menu")
+                                    config_ppl = check(choice_list[:3])
+                                    match config_ppl:
+                                        case 1:
+                                            while True:
+                                                os.system('cls')
+                                                print("ADD PEOPLE DATA")
+                                                print("\t[1] Employee Records\n\t[2] Supplier Records\n\t[0] Return to Previous Menu")
+                                                config_ppl = check(choice_list[:3])
+                                                match config_ppl: #just ask for input, no need to display table
+                                                    case 1:
+                                                        print("Add Employee Records")
+                                                        time.sleep(2)
+                                                    case 2:
+                                                        print("Add Supplier Records")
+                                                        time.sleep(2)
+                                                    case _:
+                                                        exiting(0)
+                                                        break
+                                        case 2:
+                                            while True:
+                                                os.system('cls')
+                                                print("UPDATE PEOPLE DATA")
+                                                print("\t[1] Employee Records\n\t[2] Customer Records\n\t[3] Employee Records\n\t[0] Return to Previous Menu")
+                                                config_ppl = check(choice_list[:4])
+                                                match config_ppl: #just ask for input, no need to display table
+                                                    case 1:
+                                                        print("Update Employee Records")
+                                                        time.sleep(2)
+                                                    case 2:
+                                                        print("Update Customer Records")
+                                                        time.sleep(2)
+                                                    case 2:
+                                                        print("Update Supplier Records")
+                                                        time.sleep(2)
+                                                    case _:
+                                                        exiting(0)
+                                                        break
+                                        case 3:
+                                            while True:
+                                                os.system('cls')
+                                                print("DELETE PEOPLE DATA")
+                                                print("\t[1] Employee Records\n\t[2] Customer Records\n\t[3] Employee Records\n\t[0] Return to Previous Menu")
+                                                config_ppl = check(choice_list[:4])
+                                                match config_ppl: #just ask for input, no need to display table
+                                                    case 1:
+                                                        print("Delete Employee Records")
+                                                        time.sleep(2)
+                                                    case 2:
+                                                        print("Delete Customer Records")
+                                                        time.sleep(2)
+                                                    case 2:
+                                                        print("Delete Supplier Records")
+                                                        time.sleep(2)
+                                                    case _:
+                                                        exiting(0)
+                                                        break
+                                        case _:
+                                            exiting(0)
+                                            break
                                 case _:
                                     exiting(0)
                                     break
@@ -160,7 +236,7 @@ while True:
                                 case 1:
                                     #this prints all available products
                                     print("Display all Products")
-                                    print_table("select product_name, product_details, type, price from products", 20)
+                                    print_table("select * from products", 20)
                                     time.sleep(2.5)
                                 case 2:
                                     while True:
@@ -170,25 +246,21 @@ while True:
                                         stock_choice = check(choice_list[:4])
                                         match stock_choice:
                                             case 1:
-                                                #display all rows in inventory table
                                                 print("Display All Inventory")
                                                 print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id)", 20)
                                                 time.sleep(2.5)
                                             case 2:
-                                                #display all rows where stock > 0
                                                 print("Display Products In-Stock")
                                                 print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id) where stock > 0", 20)
                                                 time.sleep(2.5)
                                             case 3:
-                                                #display all rows where stock == 0
-                                                print("Display Products Out of Stock")
                                                 print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id) where stock == 0", 20)
                                                 time.sleep(2.5)
                                             case _:
                                                 exiting(0)
                                                 break
                                 case 3:
-                                    #print all rows in the suppliers table
+                                    print_table("select * from supliers;")
                                     print("Display Suppliers")
                                     time.sleep(2.5)
                                 case _:
@@ -202,7 +274,6 @@ while True:
                             records_choice = check(choice_list[:3])
                             match records_choice:
                                 case 1:
-                                    #print all customer records
                                     print("Display All Customer Records")
                                     print_table("select * from customers")
                                     time.sleep(2.5)
@@ -219,7 +290,7 @@ while True:
                         #user inputs an order_id
                         #displays the corresponding transaction and order_details row.
                         print("View Purchase List")
-                        print_table("employees", "select * from employees")
+                        print_table("select * from employees")
                         time.sleep(2.5)
                     case _:
                         exiting(1)
