@@ -11,7 +11,6 @@ cursor = connection.cursor()
 os.system('cls')
 
 choice_list = [0,1,2,3,4] #stores the menu choices
-product_types = ['TOOLS', 'UTILITY', 'ELECTRONICS', 'CONSTRUCTION']
 
 def check(choice_list): #for checking if input is valid
     while True:
@@ -104,15 +103,11 @@ def print_table(table_query: str):
         print(str("_")*(col_ljust_vals[i]+2)+"|", end="")
     print()
 
-    
-def exist_data (table, table_column, data): #checks if one data exists in a table, usually if supplier_id is in table or if employee_id in table
-    cursor.execute(f"select count(*) from {table} where {table_column} = {data}")
-    exists = cursor.fetchone()[0]
-    if exists:
-        return 1
-    else:
-        print(f"{data} is invalid.")
-        return 0
+def exist_data(table, table_column, data):  #checks if one data exists in a table, usually if supplier_id is in table or if employee_id in table
+    query = f"SELECT COUNT(*) FROM {table} WHERE {table_column} = ?"
+    cursor.execute(query, (data,))
+    return 1 if cursor.fetchone()[0] else 0
+
     
 def add_product ():
     os.system('cls')
@@ -129,23 +124,23 @@ def add_product ():
         else: 
             break
     product_dsc = input("Enter Product Description: ")
-    print_table("select distinct type from products;")
+    print_table("select distinct type_id, type_name from types")
     while True:
-        product_type = input("Enter Product Type: ")
-        if product_type.upper() not in product_types:
-            print(f"{product_type} is invalid.")
+        type_id = int(input("Enter Product Type ID: "))
+        if type_id not in [1, 2, 3]:
+            print(f"{type_id} is invalid.")
             continue
         else: 
             break
     product_price = input("Enter Product Price: ")
     product_stock = input("Enter Product Stock: ")
     #for adding into products
-    cursor.execute("insert into products (product_name, supplier_id, product_details, type, price) values (?, ?, ?, ?, ?);", (product_name, supplier_id, product_dsc, product_type, product_price))
-    cursor.execute("select product_id from products where product_name = ?;", (product_name,));
+    cursor.execute("insert into products (product_name, supplier_id, product_details, type_id, price) values (?, ?, ?, ?, ?)", (product_name, supplier_id, product_dsc, type_id, product_price))
+    cursor.execute("select product_id from products where product_name = ?", (product_name,))
     product_id = cursor.fetchone()[0]
     #for adding into inventory
-    cursor.execute("insert into inventory (product_id, stock) values (?, ?);", (product_id, product_stock))
-    print_table("select * from inventory;")
+    cursor.execute("insert into inventory (product_id, stock) values (?, ?)", (product_id, product_stock))
+    print_table("select * from inventory")
     connection.commit()
     
 
@@ -159,8 +154,21 @@ while True:
         os.system('cls')
         print("Please enter entity type:\n\t[1] Customer\n\t[2] Employee\n\t[0] Exit the Program")
         entity_type = check(choice_list[:3])
-        
         if entity_type == 1: #if user is a customer
+            customer_name = input("Enter Customer Name [Firstname Lastname]: ")
+            login = exist_data("customers", "customer_name", customer_name)
+            if login == 0:
+                cursor.execute("insert into customers (customer_name) values (?)", (customer_name,))
+                connection.commit()
+                print(f"Succesfully Registered {customer_name} in our list!")
+                time.sleep(2.5)
+            else:
+                print("You are already a registered customer! Proceeding...")
+                time.sleep(2.5)
+            cursor.execute("select customer_id from customers where customer_name = ?", (customer_name,))
+            customer_name = cursor.fetchone()
+            customer_name = customer_name[0]
+        if entity_type == 1:
             while True:
                 os.system('cls')
                 print("CUSTOMER MAIN MENU\n\t[1] View Business Details\n\t[2] View Available Products\n\t[3] Purchase Product\n\t[0] Exit the Program")
@@ -173,18 +181,27 @@ while True:
                     case 2:
                         print("display all products")
                         print_table("select * from products")
-                        time.sleep(10)
+                        time.sleep(2.5)
                     case 3:
                         print_table("select * from products")
-                        #user inputs one product at a time.
-                        #product id and quantity
-                        #payment method
-                        #here compute total. confirm if place order.
-                        #if user places order, will prompt user to enter customer details. name, phone_num, email. then save to db. if customer customer name exists, then skip.
-                        print("Place an Order")
-                        time.sleep(2.5)
+                        date = input("Enter Date [YEAR-MONTH-DATE]: ")
+                        product_id = int(input("Enter product_ID: "))
+                        exist_data("products", "product_id", product_id)
+                        quantity = int(input("Enter Quantity: "))
+                        cursor.execute("select price from products where product_id = ?", (product_id,))
+                        query = cursor.fetchone()
+                        total = query[0] * quantity
+                        print_table("select * from employees")
+                        employee_id = int(input("Which Employee assisted you today: "))
+                        cursor.execute("insert into transactions (customer_id, transaction_date, total) values (?, ?, ?)", (customer_name, date, total,))
+                        transaction_id = cursor.lastrowid
+                        cursor.execute("insert into orders (transaction_id, employee_id) values (?, ?)", (transaction_id, employee_id,))
+                        order_id = cursor.lastrowid
+                        cursor.execute("insert into order_details (order_id, product_id, quantity) values (?, ?, ?)", (order_id, product_id, quantity,))
+                        connection.commit()
+                        print("Succesfully Ordered!")
                     case _:
-                        exiting(1)   
+                        exiting(1)
         elif entity_type == 2: #if user is an employee
             # while True: #for security / confirm if they are employee
             #print("Enter Employee ID: ")
@@ -306,20 +323,20 @@ while True:
                                         match stock_choice:
                                             case 1: # choice 2 2 2 1
                                                 print("Display All Inventory")
-                                                print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id)", )
+                                                print_table("select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id)", )
                                                 time.sleep(2.5)
                                             case 2: # choice 2 2 2 2
                                                 print("Display Products In-Stock")
-                                                print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id) where stock > 0")
+                                                print_table("select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where stock > 0")
                                                 time.sleep(2.5)
                                             case 3: # choice 2 2 2 3
-                                                print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id) where stock == 0")
+                                                print_table("select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where stock == 0")
                                                 time.sleep(2.5)
                                             case _:
                                                 exiting(0)
                                                 break
                                 case 3: # choice 2 2 3
-                                    print_table("select * from supliers;")
+                                    print_table("select * from supliers")
                                     print("Display Suppliers")
                                     time.sleep(2.5)
                                 case _:
@@ -349,7 +366,7 @@ while True:
                         #user inputs an order_id
                         #displays the corresponding transaction and order_details row.
                         print("View Purchase List")
-                        print_table("select * from employees")
+                        print_table("select * from orders ord join transactions tr on ord.transaction_id = tr.transaction_id join order_details od on ord.order_id = od.order_id")
                         time.sleep(2.5)
                     case _:
                         exiting(1)
