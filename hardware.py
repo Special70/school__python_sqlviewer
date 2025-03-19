@@ -34,18 +34,76 @@ def exiting (num):
         print("Returning to Previous Menu...")
         time.sleep(2.5)
 
-def print_table(table_query: str, extra_spacing: int = 0):
+def print_table(table_query: str):
+    """
+    Enter the select query for the first argument. NO SEMICOLON SYMBOLS
+    """
+
+    # checks if table is empty
+    query = cursor.execute(table_query)
+    if len(list(query)) == 0:
+        print("There's nothing to show.")
+
     query = cursor.execute(table_query)
     col_list = [desc[0] for desc in query.description] #removed the [:1] cuz it removes the emp_id and etc
 
-    for col in col_list:
-        print(str(col).replace("_"," ").title().ljust(30+extra_spacing)+"|",end="")
+    # get the max length of each column for proper printing
+    col_ljust_vals = []
+    for col in range(len(col_list)):
+        query_to_perform = f'SELECT MAX(LENGTH("{col_list[col]}")) FROM ({table_query})'
+        max_char_length = cursor.execute(query_to_perform).fetchone()[0]
+        col_ljust_vals.append(
+            max_char_length
+            if (max_char_length if max_char_length != None else 0) > len(col_list[col])
+            else len(col_list[col])
+    )
+
+    # create a horizontal line to separate the columns and rows
+    print("_",end="")
+    for i in range(len(col_list)):
+        print(str("_")*(col_ljust_vals[i]+2)+"_", end="")
     print()
-    for row in query:
-        # print it in a specific way
+
+    # print the columns in the first row
+    print("|",end="")
+    for i in range(len(col_list)):
         print(
-            ''.join([str(row[i]).ljust(30+extra_spacing)+"|" for i in range(len(list(col_list)))])
+            str(col_list[i])
+            .replace("_"," ")
+            .ljust(col_ljust_vals[i]+2)
+            .title()
+            +"|"
+            , end=""
         )
+    print()
+
+    # create a horizontal line to separate the columns and rows
+    print("|",end="")
+    for i in range(len(col_list)):
+        print(str("_")*(col_ljust_vals[i]+2)+"|", end="")
+    print()
+    
+    # print the rows properly now
+    query = cursor.execute(table_query)
+    for row in query:
+        print("|",end="")
+        for i in range(len(col_list)):
+            print(
+                str(row[i])
+                .replace("_"," ")
+                .ljust(col_ljust_vals[i]+2)
+                .title()
+                +"|"
+                , end=""
+            )
+        print()
+    
+    # create a horizontal line to separate the columns and rows
+    print("|",end="")
+    for i in range(len(col_list)):
+        print(str("_")*(col_ljust_vals[i]+2)+"|", end="")
+    print()
+
     
 def exist_data (table, table_column, data): #checks if one data exists in a table, usually if supplier_id is in table or if employee_id in table
     cursor.execute(f"select count(*) from {table} where {table_column} = {data}")
@@ -90,8 +148,10 @@ def add_product ():
     print_table("select * from inventory;")
     connection.commit()
     
+
 print("Welcome to Joe MV Enterprise!\n\t[1] Start the Program\n\t[0] Terminate the Program")
 choice = check(choice_list[:2])
+
 
 #main program
 while True:
@@ -112,11 +172,10 @@ while True:
                         time.sleep(2.5) 
                     case 2:
                         print("display all products")
-                        print_table("select * from products;")
+                        print_table("select * from products")
                         time.sleep(10)
                     case 3:
-                        print_table("select * from products;")
-                        print_table("select * from suppliers")
+                        print_table("select * from products")
                         #user inputs one product at a time.
                         #product id and quantity
                         #payment method
@@ -136,53 +195,53 @@ while True:
                 print("EMPLOYEE MAIN MENU\n\t[1] Configure Database \n\t[2] View Inventory\n\t[3] View Records\n\t[4] View Purchases List\n\t[0] Exit the Program")
                 employee_choice = check(choice_list)
                 match employee_choice:
-                    case 1:
+                    case 1: #choice 2 1
                         while True:
                             #this opens a submenu
                             os.system('cls')
                             print("CONFIGURE DATABASE\n\t[1] Configure Product\n\t[2] Configure People Data\n\t[0] Return to Previous Menu")
                             update_choice = check(choice_list[:3])
                             match update_choice:
-                                case 1:
+                                case 1: # choice 2 1 1
                                     while True:
                                         os.system('cls')
                                         print("CONFIGURE PRODUCT\n\t[1] Add Product\n\t[2] Update Product\n\t[3] Delete Product\n\t[0] Return to Previous Menu")
                                         config_prod = check(choice_list[:4])
                                         match config_prod:
-                                            case 1:
+                                            case 1: # choice 2 1 1 1
                                                 add_product()
                                                 time.sleep(2.5)
-                                            case 2:
+                                            case 2: # choice 2 1 1 2
                                                 print("Update Product")
                                                 time.sleep(2)
-                                            case 3:
+                                            case 3: # choice 2 1 1 3
                                                 print("Delete product")
                                                 time.sleep(2)
                                             case _:
                                                 exiting(0)
                                                 break
-                                case 2:
+                                case 2: # choice 2 1 2
                                     os.system('cls')
                                     print("CONFIGURE PEOPLE DATA\n\t[1] Add People Data\n\t[2] Update People Data\n\t[3] Delete People Data\n\t[0] Return to Previous Menu")
                                     config_ppl = check(choice_list[:3])
                                     match config_ppl:
-                                        case 1:
+                                        case 1: # choice 2 1 2 1
                                             while True:
                                                 os.system('cls')
                                                 print("ADD PEOPLE DATA")
                                                 print("\t[1] Employee Records\n\t[2] Supplier Records\n\t[0] Return to Previous Menu")
                                                 config_ppl = check(choice_list[:3])
                                                 match config_ppl: #just ask for input, no need to display table
-                                                    case 1:
+                                                    case 1: # choice 2 1 2 1 1
                                                         print("Add Employee Records")
                                                         time.sleep(2)
-                                                    case 2:
+                                                    case 2: # choice 2 1 2 1 2
                                                         print("Add Supplier Records")
                                                         time.sleep(2)
                                                     case _:
                                                         exiting(0)
                                                         break
-                                        case 2:
+                                        case 2: # choice 2 1 2 2
                                             while True:
                                                 os.system('cls')
                                                 print("UPDATE PEOPLE DATA")
@@ -201,20 +260,20 @@ while True:
                                                     case _:
                                                         exiting(0)
                                                         break
-                                        case 3:
+                                        case 3: # choice 2 1 2 3
                                             while True:
                                                 os.system('cls')
                                                 print("DELETE PEOPLE DATA")
                                                 print("\t[1] Employee Records\n\t[2] Customer Records\n\t[3] Employee Records\n\t[0] Return to Previous Menu")
                                                 config_ppl = check(choice_list[:4])
                                                 match config_ppl: #just ask for input, no need to display table
-                                                    case 1:
+                                                    case 1: # choice 2 1 2 3 1
                                                         print("Delete Employee Records")
                                                         time.sleep(2)
-                                                    case 2:
+                                                    case 2: # choice 2 1 2 3 2
                                                         print("Delete Customer Records")
                                                         time.sleep(2)
-                                                    case 2:
+                                                    case 2: # choice 2 1 2 3 3
                                                         print("Delete Supplier Records")
                                                         time.sleep(2)
                                                     case _:
@@ -226,58 +285,58 @@ while True:
                                 case _:
                                     exiting(0)
                                     break
-                    case 2:
+                    case 2: # choice 2 2
                         #this opens a submenu
                         while True:
                             os.system('cls')
                             print("VIEW INVENTORY\n\t[1] View Product List\n\t[2] View Inventory Stock\n\t[3] View Supplier List\n\t[0] Return to Main Menu")
                             inv_choice = check(choice_list[:4])
                             match inv_choice:
-                                case 1:
+                                case 1: # choice 2 2 1
                                     #this prints all available products
                                     print("Display all Products")
-                                    print_table("select * from products", 20)
+                                    print_table("select * from products")
                                     time.sleep(2.5)
-                                case 2:
+                                case 2: # choice 2 2 2
                                     while True:
                                         #this opens another submenu
                                         os.system('cls')
                                         print("INVENTORY STOCK\n\t[1] View Inventory Summary\n\t[2] View Products In-Stock\n\t[3] View Products Out-of-Stock\n\t[0] Return to Previous Menu")
                                         stock_choice = check(choice_list[:4])
                                         match stock_choice:
-                                            case 1:
+                                            case 1: # choice 2 2 2 1
                                                 print("Display All Inventory")
-                                                print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id)", 20)
+                                                print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id)", )
                                                 time.sleep(2.5)
-                                            case 2:
+                                            case 2: # choice 2 2 2 2
                                                 print("Display Products In-Stock")
-                                                print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id) where stock > 0", 20)
+                                                print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id) where stock > 0")
                                                 time.sleep(2.5)
-                                            case 3:
-                                                print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id) where stock == 0", 20)
+                                            case 3: # choice 2 2 2 3
+                                                print_table("select product_name, stock, product_details, type, price from inventory left join products using(product_id) where stock == 0")
                                                 time.sleep(2.5)
                                             case _:
                                                 exiting(0)
                                                 break
-                                case 3:
+                                case 3: # choice 2 2 3
                                     print_table("select * from supliers;")
                                     print("Display Suppliers")
                                     time.sleep(2.5)
                                 case _:
                                     exiting(0)
                                     break
-                    case 3:
+                    case 3: # choice 2 3
                         #this opens a submenu
                         while True:
                             os.system('cls')
                             print("VIEW RECORDS\n\t[1] Customer Records\n\t[2] Employee Records\n\t[0] Return to Previous Menu")
                             records_choice = check(choice_list[:3])
                             match records_choice:
-                                case 1:
+                                case 1: # choice 2 3 1
                                     print("Display All Customer Records")
                                     print_table("select * from customers")
                                     time.sleep(2.5)
-                                case 2:
+                                case 2: # choice 2 3 2
                                     #print all employee records
                                     print("Display All Employee Records")
                                     print_table("select * from employees")
@@ -285,7 +344,7 @@ while True:
                                 case _:
                                     exiting(0)
                                     break
-                    case 4:
+                    case 4: # choice 2 4
                         #prints all rows from orders table
                         #user inputs an order_id
                         #displays the corresponding transaction and order_details row.
