@@ -112,7 +112,15 @@ def exist_data(table, table_column, data):  #checks if one data exists in a tabl
 def add_product ():
     os.system('cls')
     print_table("select * from suppliers")
-    product_name = input("Enter Product Name: ")
+    while True:
+        product_name = input("\nEnter Product Name: ")
+        check = exist_data("products", "product_name", product_name)
+        if check == 1:
+            print(f"{product_name} already exists. Try again.\n")
+            time.sleep(2.5)
+            continue
+        else:
+            break
     while True:
         supplier_id = int(input("Enter Supplier ID: "))
         if supplier_id < 1:
@@ -143,6 +151,64 @@ def add_product ():
     print_table("select * from inventory")
     connection.commit()
     
+def order_products():
+    print_table("select * from products")
+    date = input("\nEnter Date [YEAR-MONTH-DATE]: ")
+    while True:
+        product_id = int(input("Enter product_ID: "))
+        check = exist_data("products", "product_id", product_id)
+        if check == 0:
+            print(f"{product_id} is invalid. Try again.\n")
+            time.sleep(2.5)
+            continue
+        else:
+            break
+    quantity = int(input("Enter Quantity: "))
+    #adding to tables and computing total
+    cursor.execute("select price from products where product_id = ?", (product_id,))
+    query = cursor.fetchone()
+    total = query[0] * quantity
+    print_table("select * from employees")
+    employee_id = int(input("\nWhich Employee assisted you today: "))
+    cursor.execute("insert into transactions (customer_id, transaction_date, total) values (?, ?, ?)", (customer_name, date, total,))
+    transaction_id = cursor.lastrowid
+    cursor.execute("insert into orders (transaction_id, employee_id) values (?, ?)", (transaction_id, employee_id,))
+    order_id = cursor.lastrowid
+    cursor.execute("insert into order_details (order_id, product_id, quantity) values (?, ?, ?)", (order_id, product_id, quantity,))
+    connection.commit()
+    print("Succesfully Ordered!")
+    time.sleep(2.5)
+
+def add_emp ():
+    print("Add Employee Records")
+    while True:
+        emp_name = input("Enter Employee Name: ")
+        check = exist_data("employees", "employee_name", emp_name)
+        if check == 1:
+            print(f"{emp_name} already exists. Try again.")
+            continue
+        else:
+            break
+    cursor.execute("insert into employees (employee_name) values (?)", (emp_name,))
+    result = cursor.lastrowid
+    print(f"{emp_name} has been registered with the Employee ID of {result}")
+    connection.commit()
+
+def add_supp ():
+    print("Add Supplier Records")
+    while True:
+        supp_name = input("Enter Supplier Name: ")
+        check = exist_data("suppliers", "supplier_name", supp_name)
+        if check == 1:
+            print(f"{supp_name} already exists. Try again.")
+            continue
+        else:
+            break
+    cursor.execute("insert into suppliers (supplier_name) values (?)", (supp_name,))
+    result = cursor.lastrowid
+    print(f"{supp_name} has been registered with the Employee ID of {result}")
+    connection.commit()
+
 
 print("Welcome to Joe MV Enterprise!\n\t[1] Start the Program\n\t[0] Terminate the Program")
 choice = check(choice_list[:2])
@@ -183,23 +249,7 @@ while True:
                         print_table("select * from products")
                         time.sleep(2.5)
                     case 3:
-                        print_table("select * from products")
-                        date = input("Enter Date [YEAR-MONTH-DATE]: ")
-                        product_id = int(input("Enter product_ID: "))
-                        exist_data("products", "product_id", product_id)
-                        quantity = int(input("Enter Quantity: "))
-                        cursor.execute("select price from products where product_id = ?", (product_id,))
-                        query = cursor.fetchone()
-                        total = query[0] * quantity
-                        print_table("select * from employees")
-                        employee_id = int(input("Which Employee assisted you today: "))
-                        cursor.execute("insert into transactions (customer_id, transaction_date, total) values (?, ?, ?)", (customer_name, date, total,))
-                        transaction_id = cursor.lastrowid
-                        cursor.execute("insert into orders (transaction_id, employee_id) values (?, ?)", (transaction_id, employee_id,))
-                        order_id = cursor.lastrowid
-                        cursor.execute("insert into order_details (order_id, product_id, quantity) values (?, ?, ?)", (order_id, product_id, quantity,))
-                        connection.commit()
-                        print("Succesfully Ordered!")
+                        order_products()
                     case _:
                         exiting(1)
         elif entity_type == 2: #if user is an employee
@@ -250,10 +300,10 @@ while True:
                                                 config_ppl = check(choice_list[:3])
                                                 match config_ppl: #just ask for input, no need to display table
                                                     case 1: # choice 2 1 2 1 1
-                                                        print("Add Employee Records")
+                                                        add_emp()
                                                         time.sleep(2)
                                                     case 2: # choice 2 1 2 1 2
-                                                        print("Add Supplier Records")
+                                                        add_supp()
                                                         time.sleep(2)
                                                     case _:
                                                         exiting(0)
@@ -346,17 +396,17 @@ while True:
                         #this opens a submenu
                         while True:
                             os.system('cls')
-                            print("VIEW RECORDS\n\t[1] Customer Records\n\t[2] Employee Records\n\t[0] Return to Previous Menu")
-                            records_choice = check(choice_list[:3])
+                            print("VIEW RECORDS\n\t[1] Customer Records\n\t[2] Employee Records\n\t[3] Supplier Records\n\t[0] Return to Previous Menu")
+                            records_choice = check(choice_list[:4])
                             match records_choice:
                                 case 1: # choice 2 3 1
-                                    print("Display All Customer Records")
                                     print_table("select * from customers")
                                     time.sleep(2.5)
                                 case 2: # choice 2 3 2
-                                    #print all employee records
-                                    print("Display All Employee Records")
                                     print_table("select * from employees")
+                                    time.sleep(2.5)
+                                case 3:
+                                    print_table("select * from suppliers")
                                     time.sleep(2.5)
                                 case _:
                                     exiting(0)
