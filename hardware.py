@@ -152,7 +152,7 @@ def add_product ():
     connection.commit()
     
 def order_products():
-    print_table("select * from products")
+    print_table("select * from products join inventory using (product_id) where stock > 0")
     date = input("\nEnter Date [YEAR-MONTH-DATE]: ")
     while True:
         product_id = int(input("Enter product_ID: "))
@@ -175,8 +175,12 @@ def order_products():
     cursor.execute("insert into orders (transaction_id, employee_id) values (?, ?)", (transaction_id, employee_id,))
     order_id = cursor.lastrowid
     cursor.execute("insert into order_details (order_id, product_id, quantity) values (?, ?, ?)", (order_id, product_id, quantity,))
+    cursor.execute("update inventory set stock = stock - ? where product_id = ? ", (quantity, product_id,))
     connection.commit()
     print("Succesfully Ordered!")
+    cursor.execute("select product_name from products where product_id = ?", (product_id,))
+    result = cursor.fetchone()[0]
+    print(f"ORDER SUMMARY:\n\tProduct: {result}\n\tQuantity: {quantity}\n--------------------------------------\n\tTotal: {total}")
     time.sleep(2.5)
 
 def add_emp ():
