@@ -63,10 +63,10 @@ while True:
                         input("\nPress Enter to Continue...")
                     case 2:
                         print("display all products")
-                        print_table("select * from products")
+                        print_table("select product_name, type_name, product_details, stock, price from (select * from products left join types using (type_id)) inner join inventory using (product_id)")
                         input("\nPress Enter to Continue...")
                     case 3:
-                        order_products()
+                        order_products("customer_name")
                     case _:
                         exiting(1)
         elif entity_type == 2: #if user is an employee

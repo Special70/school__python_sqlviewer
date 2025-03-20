@@ -1,6 +1,7 @@
 import os, time
 from standalone.functions.exist_check import exist_check
 from standalone.functions.print_table import print_table
+from standalone.global_vars import cursor, connection
 
 def delete_people(table_name):
     os.system('cls')
