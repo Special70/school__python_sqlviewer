@@ -212,6 +212,19 @@ def add_supp ():
     result = cursor.lastrowid
     print(f"{supp_name} has been registered with the Employee ID of {result}")
     connection.commit()
+    
+def customer_login():
+    customer_name = input("Enter Customer Name [Firstname Lastname]: ")
+    login = exist_data("customers", "customer_name", customer_name)
+    if login == 0:
+        cursor.execute("insert into customers (customer_name) values (?)", (customer_name,))
+        connection.commit()
+        print(f"Succesfully Registered {customer_name} in our list!")
+    else:
+        print("You are already a registered customer! Proceeding...")
+    cursor.execute("select customer_id from customers where customer_name = ?", (customer_name,))
+    customer_name = cursor.fetchone()[0]
+    return customer_name
 
 
 print("Welcome to Joe MV Enterprise!\n\t[1] Start the Program\n\t[0] Terminate the Program")
@@ -225,19 +238,8 @@ while True:
         print("Please enter entity type:\n\t[1] Customer\n\t[2] Employee\n\t[0] Exit the Program")
         entity_type = check(choice_list[:3])
         if entity_type == 1: #if user is a customer
-            customer_name = input("Enter Customer Name [Firstname Lastname]: ")
-            login = exist_data("customers", "customer_name", customer_name)
-            if login == 0:
-                cursor.execute("insert into customers (customer_name) values (?)", (customer_name,))
-                connection.commit()
-                print(f"Succesfully Registered {customer_name} in our list!")
-                time.sleep(2.5)
-            else:
-                print("You are already a registered customer! Proceeding...")
-                time.sleep(2.5)
-            cursor.execute("select customer_id from customers where customer_name = ?", (customer_name,))
-            customer_name = cursor.fetchone()
-            customer_name = customer_name[0]
+            customer_name = customer_login()
+            time.sleep(2.5)
         if entity_type == 1:
             while True:
                 os.system('cls')
