@@ -103,45 +103,47 @@ def print_table(table_query: str):
         print(str("_")*(col_ljust_vals[i]+2)+"|", end="")
     print()
 
-def exist_data(table, table_column, data):  #checks if one data exists in a table, usually if supplier_id is in table or if employee_id in table
-    query = f"SELECT COUNT(*) FROM {table} WHERE {table_column} = ?"
-    cursor.execute(query, (data,))
-    return 1 if cursor.fetchone()[0] else 0
-
     
 def add_product ():
-    os.system('cls')
-    print_table("select * from suppliers")
     while True:
-        product_name = input("\nEnter Product Name: ")
-        check = exist_data("products", "product_name", product_name)
-        if check == 1:
-            print(f"{product_name} already exists. Try again.\n")
-            time.sleep(2.5)
-            continue
-        else:
+        try:
+            os.system('cls')
+            print_table("select * from suppliers")
+            while True:
+                product_name = input("\nEnter Product Name: ")
+                if exist_check("products", "product_name", product_name) == 1:
+                    print(f"{product_name} already exists. Try again.\n")
+                    input("\nPress Enter to Continue...\n")
+                    continue
+                else:
+                    break
+            while True:
+                    supplier_id = int(input("Enter Supplier ID: "))
+                    if supplier_id < 1 or exist_check("suppliers", "supplier_id", supplier_id) == 0:
+                        print(f"{supplier_id} is invalid.")
+                        input("\nPress Enter to Continue...\n")
+                        continue
+                    else:
+                        break
+                    
+            product_dsc = input("Enter Product Description: ")
+            print_table("select distinct type_id, type_name from types")
+            while True:
+                type_id = int(input("Enter Product Type ID: "))
+                if type_id not in [1, 2, 3]:
+                    print(f"{type_id} is invalid.")
+                    input("\nPress Enter to Continue...\n")
+                    continue
+                else:
+                    break
+            product_price = int(input("Enter Product Price: "))
+            product_stock = int(input("Enter Product Stock: "))
             break
-    while True:
-        supplier_id = int(input("Enter Supplier ID: "))
-        if supplier_id < 1:
-            print(f"{supplier_id} is invalid.")
+        except ValueError:
+            print("ERROR | Invalid Input.")
+            input("\nPress Enter to Continue...\n")
             continue
-        check = exist_data("suppliers", "supplier_id", supplier_id)
-        if check == 0:
-            continue
-        else: 
-            break
-    product_dsc = input("Enter Product Description: ")
-    print_table("select distinct type_id, type_name from types")
-    while True:
-        type_id = int(input("Enter Product Type ID: "))
-        if type_id not in [1, 2, 3]:
-            print(f"{type_id} is invalid.")
-            continue
-        else: 
-            break
-    product_price = input("Enter Product Price: ")
-    product_stock = input("Enter Product Stock: ")
+            
     #for adding into products
     cursor.execute("insert into products (product_name, supplier_id, product_details, type_id, price) values (?, ?, ?, ?, ?)", (product_name, supplier_id, product_dsc, type_id, product_price))
     cursor.execute("select product_id from products where product_name = ?", (product_name,))
@@ -156,10 +158,9 @@ def order_products():
     date = input("\nEnter Date [YEAR-MONTH-DATE]: ")
     while True:
         product_id = int(input("Enter product_ID: "))
-        check = exist_data("products", "product_id", product_id)
-        if check == 0:
+        if exist_check("products", "product_id", product_id) == 0:
             print(f"{product_id} is invalid. Try again.\n")
-            time.sleep(2.5)
+            input("\nPress Enter to Continue...\n")
             continue
         else:
             break
@@ -181,15 +182,16 @@ def order_products():
     cursor.execute("select product_name from products where product_id = ?", (product_id,))
     result = cursor.fetchone()[0]
     print(f"ORDER SUMMARY:\n\tProduct: {result}\n\tQuantity: {quantity}\n--------------------------------------\n\tTotal: {total}")
-    time.sleep(2.5)
+    input("\nPress Enter to Continue...\n")
 
 def add_emp ():
     print("Add Employee Records")
     while True:
         emp_name = input("Enter Employee Name: ")
-        check = exist_data("employees", "employee_name", emp_name)
+        check = exist_check("employees", "employee_name", emp_name)
         if check == 1:
             print(f"{emp_name} already exists. Try again.")
+            input("\nPress Enter to Continue...\n")
             continue
         else:
             break
@@ -199,12 +201,13 @@ def add_emp ():
     connection.commit()
 
 def add_supp ():
-    print("Add Supplier Records")
+    print("Add Supplier Records:\n")
     while True:
         supp_name = input("Enter Supplier Name: ")
-        check = exist_data("suppliers", "supplier_name", supp_name)
+        check = exist_check("suppliers", "supplier_name", supp_name)
         if check == 1:
             print(f"{supp_name} already exists. Try again.")
+            input("\nPress Enter to Continue...\n")
             continue
         else:
             break
@@ -215,7 +218,7 @@ def add_supp ():
     
 def customer_login():
     customer_name = input("Enter Customer Name [Firstname Lastname]: ")
-    login = exist_data("customers", "customer_name", customer_name)
+    login = exist_check("customers", "customer_name", customer_name)
     if login == 0:
         cursor.execute("insert into customers (customer_name) values (?)", (customer_name,))
         connection.commit()
@@ -226,6 +229,189 @@ def customer_login():
     customer_name = cursor.fetchone()[0]
     return customer_name
 
+def exist_check(table, table_column, data):  #checks if one data exists in a table, usually if supplier_id is in table or if employee_id in table
+    query = f"SELECT COUNT(*) FROM {table} WHERE {table_column} = ?"
+    cursor.execute(query, (data,))
+    return 1 if cursor.fetchone()[0] else 0
+    
+def delete_product():
+
+    while True:
+        os.system('cls')
+        print_table('select * from products') #display for deletion selection
+        product_id = input("Enter Product ID [000 to Cancel]: ")
+
+        if product_id == '000':
+            print("Deletion of Product is Cancelled.")
+            input("\nPress Enter to Continue...\n")
+            break
+        
+        elif exist_check('products', 'product_id', product_id) == 0:
+            print(f"Product ID {product_id} is invalid.")
+            input("\nPress Enter to Continue...\n")
+            continue
+        
+        else:
+            confirmation = input("Are you sure? [YES/NO]: ")
+            if confirmation[0].upper() == 'Y':
+                cursor.execute("Select product_name from products where product_id = ?", (product_id,))
+                product_name = cursor.fetchone()[0]
+                cursor.execute('delete from products where product_id = ?', (product_id,))
+                print(f"Product {product_name} has been succesfully deleted.")
+                connection.commit()
+                time.sleep(1.5)
+                print("\nDisplaying Updated Product List:")
+                print_table('select * from products')
+                break
+            else:
+                print(f"Deletion of Product {product_name} is Cancelled.")
+                break    
+
+def update_product():
+    os.system('cls')
+    print_table('select * from products')
+    
+    while True:
+        product_id = input("Enter Product ID to Edit [000 to Cancel]: ")
+        
+        if product_id == '000':
+            print("Editing Product is Cancelled.")
+            time.sleep(1.5)
+            break
+        
+        elif exist_check('products', 'product_id', product_id) == 0:
+            print(f"Product ID {product_id} is invalid.")
+            input("\nPress Enter to Continue...\n")
+            continue
+        
+        else:
+            print("Enter New Product Details:")
+            
+            product_name = input("Enter Product Name: ")
+            
+            print_table('select * from suppliers')
+                
+            while True:
+                supplier_id = input("Enter Supplier ID: ")
+                if supplier_id < '1' or exist_check('suppliers', 'supplier_id', supplier_id) == 0:
+                    print(f"{supplier_id} is invalid.")
+                    input("\nPress Enter to Continue...\n")
+                    continue
+                else: 
+                    break
+                
+            product_dsc = input("\nEnter Product Description: ")
+            print_table("select distinct type_id, type_name from types")
+            
+            while True:
+                type_id = int(input("Enter Product Type ID: "))
+                if type_id not in [1, 2, 3]:
+                    print(f"{type_id} is invalid.")
+                    input("\nPress Enter to Continue...\n")
+                    continue
+                else: 
+                    break
+        
+            product_price = input("\nEnter Product Price: ")
+            product_stock = input("\nEnter Product Stock: ")
+            
+            cursor.execute('update products set product_name = ?, supplier_id = ?, product_details = ?, type_id = ?, price = ? where product_id = ?',(product_name, supplier_id, product_dsc, type_id, product_price, product_id))
+            cursor.execute("select product_id from products where product_name = ?", (product_name,))
+            product_id = cursor.fetchone()[0]
+            #for adding into inventory
+            cursor.execute('update inventory set product_id = ?, stock = ? where product_id = ?', (product_id, product_stock, product_id))
+            connection.commit()
+            
+            print("Product Succesfully Updated!")
+            time.sleep(1)
+            print("\nDisplaying Updated Products Table:")
+            print_table("select * from inventory")
+            break
+
+def update_people(table_name):
+    os.system('cls')
+    print_table(f'select * from {table_name}')
+    if table_name == 'employees':
+        col_id = 'employee_id'
+        col_name = 'employee_name'
+        
+    elif table_name == 'customers':
+        col_id = 'customer_id'
+        col_name = 'customer_name'
+    else:
+        col_id = 'supplier_id'
+        col_name = 'supplier_name'
+        
+    while True:
+        id_input = input(f"Enter ID to Edit [000 to Cancel]: ")
+        
+        if id_input == '000':
+            print(f"{table_name.capitalize()} Editing is Cancelled.")
+            time.sleep(1)
+            break
+        
+
+        elif exist_check(table_name, col_id, id_input) == 0:
+            print(f"ID {id_input} is Invalid.")
+            input("\nPress Enter to Continue...\n")
+            continue
+        else:
+            name = input("\nEnter New Name: ").capitalize()
+            cursor.execute(f'select count(*) from {table_name} where {col_name} LIKE ?', ('%' + name + '%',))
+        
+            if cursor.fetchone()[0] == 1:
+                print(f"Name: {name} is the same.")
+                input("\nPress Enter to Continue...\n")
+                continue
+            
+            else: 
+                cursor.execute(f'update {table_name} set {col_name} = ? where {col_id}= ?', (name, id_input))
+                connection.commit()
+                print(f"\n{table_name.capitalize()} Record Successfully Updated!\n\nDisplaying Updated {table_name.capitalize()} List:")
+                print_table(f'select * from {table_name}')
+                break
+            
+def delete_people(table_name):
+    os.system('cls')
+    print_table(f'select * from {table_name}')
+    if table_name == 'employees':
+        col_id = 'employee_id'
+        
+    elif table_name == 'customers':
+        col_id = 'customer_id'
+        
+    else:
+        col_id = 'supplier_id'
+    
+    while True:
+        id_input = input("Enter ID to be Deleted [000 to Cancel]: ")
+        
+        if id_input == '000':
+            print(f"{table_name.capitalize()} Deletion is Cancelled.")
+            time.sleep(1)
+            break
+
+        elif exist_check(table_name, col_id, id_input) == 0:
+            print(f"ID {id_input} is Invalid.")
+            input("\nPress Enter to Continue...\n")
+            continue
+        
+        else:
+            confirmation = input("Are you sure? [YES/NO]: ")
+            if confirmation[0].upper() == 'Y':
+                cursor.execute(f'delete from {table_name} where {col_id} = ?', (id_input,))
+                connection.commit()
+                print(f"\nData Successfully Deleted!\n")
+                
+                time.sleep(1.5)
+                
+                print(f"\nDisplaying Updated {table_name.capitalize()} List:")
+                print_table(f'select * from {table_name}')
+                break
+            else:
+                print(f"{table_name.capitalize()} Deletion is Cancelled.")
+                break    
+        
 
 print("Welcome to Joe MV Enterprise!\n\t[1] Start the Program\n\t[0] Terminate the Program")
 choice = check(choice_list[:2])
@@ -249,11 +435,11 @@ while True:
                     case 1:
                         print("Welcome to Joe MV Enterprise! We are a family owned business that provides a wide range of hardware, ranging from electronic hardwares to manual equipment. We have been in the business for 50 years, and have built a reputable legacy.")
                         #this is a description of the business. may edit
-                        time.sleep(2.5) 
+                        input("\nPress Enter to Continue...")
                     case 2:
                         print("display all products")
                         print_table("select * from products")
-                        time.sleep(2.5)
+                        input("\nPress Enter to Continue...")
                     case 3:
                         order_products()
                     case _:
@@ -283,20 +469,20 @@ while True:
                                         match config_prod:
                                             case 1: # choice 2 1 1 1
                                                 add_product()
-                                                time.sleep(2.5)
+                                                input("\nPress Enter to Continue...")
                                             case 2: # choice 2 1 1 2
-                                                print("Update Product")
-                                                time.sleep(2)
+                                                update_product()
+                                                input("\nPress Enter to Continue...")
                                             case 3: # choice 2 1 1 3
-                                                print("Delete product")
-                                                time.sleep(2)
+                                                delete_product()
+                                                input("\nPress Enter to Continue...")
                                             case _:
                                                 exiting(0)
                                                 break
                                 case 2: # choice 2 1 2
                                     os.system('cls')
                                     print("CONFIGURE PEOPLE DATA\n\t[1] Add People Data\n\t[2] Update People Data\n\t[3] Delete People Data\n\t[0] Return to Previous Menu")
-                                    config_ppl = check(choice_list[:3])
+                                    config_ppl = check(choice_list[:4])
                                     match config_ppl:
                                         case 1: # choice 2 1 2 1
                                             while True:
@@ -307,10 +493,10 @@ while True:
                                                 match config_ppl: #just ask for input, no need to display table
                                                     case 1: # choice 2 1 2 1 1
                                                         add_emp()
-                                                        time.sleep(2)
+                                                        input("\nPress Enter to Continue...")
                                                     case 2: # choice 2 1 2 1 2
                                                         add_supp()
-                                                        time.sleep(2)
+                                                        input("\nPress Enter to Continue...")
                                                     case _:
                                                         exiting(0)
                                                         break
@@ -318,18 +504,18 @@ while True:
                                             while True:
                                                 os.system('cls')
                                                 print("UPDATE PEOPLE DATA")
-                                                print("\t[1] Employee Records\n\t[2] Customer Records\n\t[3] Employee Records\n\t[0] Return to Previous Menu")
+                                                print("\t[1] Employee Records\n\t[2] Customer Records\n\t[3] Supplier Records\n\t[0] Return to Previous Menu")
                                                 config_ppl = check(choice_list[:4])
                                                 match config_ppl: #just ask for input, no need to display table
                                                     case 1:
-                                                        print("Update Employee Records")
-                                                        time.sleep(2)
+                                                        update_people('employees')
+                                                        input("\nPress Enter to Continue...")
                                                     case 2:
-                                                        print("Update Customer Records")
-                                                        time.sleep(2)
-                                                    case 2:
-                                                        print("Update Supplier Records")
-                                                        time.sleep(2)
+                                                        update_people('customers')
+                                                        input("\nPress Enter to Continue...")
+                                                    case 3:
+                                                        update_people('suppliers')
+                                                        input("\nPress Enter to Continue...")
                                                     case _:
                                                         exiting(0)
                                                         break
@@ -337,18 +523,18 @@ while True:
                                             while True:
                                                 os.system('cls')
                                                 print("DELETE PEOPLE DATA")
-                                                print("\t[1] Employee Records\n\t[2] Customer Records\n\t[3] Employee Records\n\t[0] Return to Previous Menu")
+                                                print("\t[1] Employee Records\n\t[2] Customer Records\n\t[3] Supplier Records\n\t[0] Return to Previous Menu")
                                                 config_ppl = check(choice_list[:4])
                                                 match config_ppl: #just ask for input, no need to display table
                                                     case 1: # choice 2 1 2 3 1
-                                                        print("Delete Employee Records")
-                                                        time.sleep(2)
+                                                        delete_people('employees')
+                                                        input("\nPress Enter to Continue...")
                                                     case 2: # choice 2 1 2 3 2
-                                                        print("Delete Customer Records")
-                                                        time.sleep(2)
-                                                    case 2: # choice 2 1 2 3 3
-                                                        print("Delete Supplier Records")
-                                                        time.sleep(2)
+                                                        delete_people('customers')
+                                                        input("\nPress Enter to Continue...")
+                                                    case 3: # choice 2 1 2 3 3
+                                                        delete_people('suppliers')
+                                                        input("\nPress Enter to Continue...")
                                                     case _:
                                                         exiting(0)
                                                         break
@@ -369,7 +555,7 @@ while True:
                                     #this prints all available products
                                     print("Display all Products")
                                     print_table("select * from products")
-                                    time.sleep(2.5)
+                                    input("\nPress Enter to Continue...")
                                 case 2: # choice 2 2 2
                                     while True:
                                         #this opens another submenu
@@ -380,21 +566,21 @@ while True:
                                             case 1: # choice 2 2 2 1
                                                 print("Display All Inventory")
                                                 print_table("select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id)", )
-                                                time.sleep(2.5)
+                                                input("\nPress Enter to Continue...")
                                             case 2: # choice 2 2 2 2
                                                 print("Display Products In-Stock")
                                                 print_table("select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where stock > 0")
-                                                time.sleep(2.5)
+                                                input("\nPress Enter to Continue...")
                                             case 3: # choice 2 2 2 3
                                                 print_table("select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where stock == 0")
-                                                time.sleep(2.5)
+                                                input("\nPress Enter to Continue...")
                                             case _:
                                                 exiting(0)
                                                 break
                                 case 3: # choice 2 2 3
                                     print_table("select * from supliers")
                                     print("Display Suppliers")
-                                    time.sleep(2.5)
+                                    input("\nPress Enter to Continue...")
                                 case _:
                                     exiting(0)
                                     break
@@ -407,13 +593,13 @@ while True:
                             match records_choice:
                                 case 1: # choice 2 3 1
                                     print_table("select * from customers")
-                                    time.sleep(2.5)
+                                    input("\nPress Enter to Continue...")
                                 case 2: # choice 2 3 2
                                     print_table("select * from employees")
-                                    time.sleep(2.5)
+                                    input("\nPress Enter to Continue...")
                                 case 3:
                                     print_table("select * from suppliers")
-                                    time.sleep(2.5)
+                                    input("\nPress Enter to Continue...")
                                 case _:
                                     exiting(0)
                                     break
@@ -423,7 +609,7 @@ while True:
                         #displays the corresponding transaction and order_details row.
                         print("View Purchase List")
                         print_table("select * from orders ord join transactions tr on ord.transaction_id = tr.transaction_id join order_details od on ord.order_id = od.order_id")
-                        time.sleep(2.5)
+                        input("\nPress Enter to Continue...")
                     case _:
                         exiting(1)
         
