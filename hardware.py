@@ -39,6 +39,8 @@ from functions.delete_people import delete_people
 
 from functions.employee_login import employee_login
 
+from functions.restock import restock
+
 #gui starts here
 # root = tk.Tk()
 # root.title("Angelite's Hardware Enterprise")
@@ -97,8 +99,8 @@ while True:
                                 case 1: # choice 2 1 1
                                     while True:
                                         os.system('cls')
-                                        print("CONFIGURE PRODUCT\n\t[1] Add Product\n\t[2] Update Product\n\t[3] Delete Product\n\t[0] Return to Previous Menu")
-                                        config_prod = check(choice_list[:4])
+                                        print("CONFIGURE PRODUCT\n\t[1] Add Product\n\t[2] Update Product\n\t[3] Delete Product\n\t[4] Restock Product\n\t[0] Return to Previous Menu")
+                                        config_prod = check(choice_list)
                                         match config_prod:
                                             case 1: # choice 2 1 1 1
                                                 add_product()
@@ -108,6 +110,9 @@ while True:
                                                 input("\nPress Enter to Continue...")
                                             case 3: # choice 2 1 1 3
                                                 delete_product()
+                                                input("\nPress Enter to Continue...")
+                                            case 4:
+                                                restock()
                                                 input("\nPress Enter to Continue...")
                                             case _:
                                                 exiting(0)
@@ -198,7 +203,7 @@ while True:
                                         match stock_choice:
                                             case 1: # choice 2 2 2 1
                                                 print("Display All Inventory")
-                                                print_table("select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where product_id not", )
+                                                print_table("select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where product_id")
                                                 input("\nPress Enter to Continue...")
                                             case 2: # choice 2 2 2 2
                                                 print("Display Products In-Stock")
