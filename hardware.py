@@ -1,8 +1,8 @@
 import os
 import time # to see if program goes to where it should be. will be removed in the final code
 import sqlite3
-# import tkinter as tk
-# from tkinter import ttk
+import tkinter as tk
+from tkinter import *
 
 connection = sqlite3.connect("hardwareDB.db")
 cursor = connection.cursor()
@@ -36,9 +36,21 @@ from functions.update_product import update_product
 from functions.update_people import update_people
 
 from functions.delete_people import delete_people
-        
 
-print("Welcome to Joe MV Enterprise!\n\t[1] Start the Program\n\t[0] Terminate the Program")
+from functions.employee_login import employee_login
+
+#gui starts here
+# root = tk.Tk()
+# root.title("Angelite's Hardware Enterprise")
+# root.geometry('500x550')
+# heading = Label(root, text = "MAIN MENU", font=("Arial", 16, "bold"))
+# heading.place(relx=0.5, rely=0.2, anchor="center")
+
+# btn = Button(root, text = "Start The Program", padx=10, pady=10, relief="solid")
+# btn.place(relx=0.5, rely=0.5, anchor="center")
+# root.mainloop()        
+
+print("Welcome to Angelite's Hardware Enterprise!\n\t[1] Start the Program\n\t[0] Terminate the Program")
 choice = check(choice_list[:2])
 
 
@@ -49,7 +61,7 @@ while True:
         print("Please enter entity type:\n\t[1] Customer\n\t[2] Employee\n\t[0] Exit the Program")
         entity_type = check(choice_list[:3])
         if entity_type == 1: #if user is a customer
-            customer_name = customer_login()
+            customer_id = customer_login()
             time.sleep(2.5)
         if entity_type == 1:
             while True:
@@ -62,18 +74,14 @@ while True:
                         #this is a description of the business. may edit
                         input("\nPress Enter to Continue...")
                     case 2:
-                        print("display all products")
                         print_table("select product_name, type_name, product_details, stock, price from (select * from products left join types using (type_id)) inner join inventory using (product_id)")
                         input("\nPress Enter to Continue...")
                     case 3:
-                        order_products("customer_name")
+                        order_products(customer_id)
                     case _:
                         exiting(1)
-        elif entity_type == 2: #if user is an employee
-            # while True: #for security / confirm if they are employee
-            #print("Enter Employee ID: ")
-            #condition if employee id not in employee table, return to previous menu which is customer or employee ba sya
-            #if employee id in employee table, then this:
+        elif entity_type == 2: 
+            employee_login()
             while True:
                 os.system('cls')
                 print("EMPLOYEE MAIN MENU\n\t[1] Configure Database \n\t[2] View Inventory\n\t[3] View Records\n\t[4] View Purchases List\n\t[0] Exit the Program")
@@ -173,8 +181,8 @@ while True:
                         #this opens a submenu
                         while True:
                             os.system('cls')
-                            print("VIEW INVENTORY\n\t[1] View Product List\n\t[2] View Inventory Stock\n\t[3] View Supplier List\n\t[0] Return to Main Menu")
-                            inv_choice = check(choice_list[:4])
+                            print("VIEW INVENTORY\n\t[1] View Product List\n\t[2] View Inventory Stock\n\t[0] Return to Main Menu")
+                            inv_choice = check(choice_list[:3])
                             match inv_choice:
                                 case 1: # choice 2 2 1
                                     #this prints all available products
@@ -190,7 +198,7 @@ while True:
                                         match stock_choice:
                                             case 1: # choice 2 2 2 1
                                                 print("Display All Inventory")
-                                                print_table("select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id)", )
+                                                print_table("select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where product_id not", )
                                                 input("\nPress Enter to Continue...")
                                             case 2: # choice 2 2 2 2
                                                 print("Display Products In-Stock")
@@ -202,10 +210,6 @@ while True:
                                             case _:
                                                 exiting(0)
                                                 break
-                                case 3: # choice 2 2 3
-                                    print_table("select * from supliers")
-                                    print("Display Suppliers")
-                                    input("\nPress Enter to Continue...")
                                 case _:
                                     exiting(0)
                                     break
