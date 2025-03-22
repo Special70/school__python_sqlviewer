@@ -64,6 +64,8 @@ while True:
         entity_type = check(choice_list[:3])
         if entity_type == 1: #if user is a customer
             customer_id = customer_login()
+            if customer_id == None:
+                continue
             time.sleep(2.5)
         if entity_type == 1:
             while True:
