@@ -5,16 +5,16 @@ from os import system
 
 def customer_login():
     while True:
-        print("Enter \"BACK\" to go back")
+        print("Enter \"000\" to go back")
         customer_name = input("Enter Customer Name [Firstname Lastname]: ")
         # back
-        if customer_name.lower() == "back":
+        if customer_name == "000":
             return None
 
         login = exist_check("customers", "customer_name", customer_name)
         if login == 0:
-            password = input("New user entry detected! Enter a password for this account (Enter \"BACK\" to cancel)\n> ")
-            if password.lower() == "back":
+            password = input("New user entry detected! Enter a password for this account (Enter \"000\" to cancel)\n> ")
+            if password.lower() == "000":
                 continue
 
             cursor.execute("insert into customers (customer_name, password) values (?, ?)", (customer_name,password,))
@@ -22,7 +22,7 @@ def customer_login():
             print(f"Succesfully Registered {customer_name} in our list!")
         else:
             print("You are already a registered customer!")
-            password = input("New user entry detected! Enter a password for this account (Enter \"BACK\" to cancel)\n> ")
+            password = input("Entry detected! Enter a password for this account (Enter \"000\" to cancel)\n> ")
             if password.lower() == "back":
                 continue
 
