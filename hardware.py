@@ -132,7 +132,9 @@ while True:
                                                 config_ppl = check(choice_list[:3])
                                                 match config_ppl: #just ask for input, no need to display table
                                                     case 1: # choice 2 1 2 1 1
-                                                        add_emp()
+                                                        action = add_emp()
+                                                        if action == 0:
+                                                            continue
                                                         input("\nPress Enter to Continue...")
                                                     case 2: # choice 2 1 2 1 2
                                                         add_supp()

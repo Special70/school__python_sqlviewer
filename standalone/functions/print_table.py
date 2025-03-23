@@ -58,7 +58,6 @@ def print_table(table_query: str):
                 str(row[i])
                 .replace("_"," ")
                 .ljust(col_ljust_vals[i]+2)
-                .title()
                 +"|"
                 , end=""
             )
