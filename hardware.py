@@ -14,36 +14,20 @@ cursor = connection.cursor()
 os.system('cls')
 
 choice_list = [0,1,2,3,4] #stores the menu choices
-    
-from functions.check import check
 
 # from functions.exiting import exiting
 
 # from standalone.functions.display_table import display_table
 
-from functions.add_product import add_product
-
 from functions.order_products import order_products
-
-from functions.add_emp import add_emp
-
-from functions.add_supp import add_supp
 
 from functions.customer_login import customer_login
 
 from standalone.functions.exist_check import exist_check
-    
-from functions.delete_product import delete_product
-
-from functions.update_product import update_product
-
-from functions.update_people import update_people
 
 from functions.delete_people import delete_people
 
 from functions.employee_login import employee_login
-
-from functions.restock import restock
             
 root = ctk.CTk()
 ctk.set_appearance_mode("dark")
@@ -121,7 +105,7 @@ def customer_login():
         no_button = ctk.CTkButton(root, text='No', command=lambda: exiting())
         no_button.pack(pady=12, padx=10)
     elif verification == 1:
-        label = ctk.CTkLabel(root, text=f"Logging in as {customer_name}...")
+        label = ctk.CTkLabel(root, text=f"Successfully logged in as \"{customer_name}\"!")
         label.pack(pady=12, padx=10)
         proceed = ctk.CTkButton(root, text="Login", command=lambda: customer_submenu())
         proceed.pack(pady=(5,20))
@@ -147,7 +131,7 @@ def employee_login():
         tkmb.showinfo("Login Failed", "Incorrect Details.")
         exiting()
     elif verification == 1:
-        label = ctk.CTkLabel(root, text=f"Logging in as {employee_name}...")
+        label = ctk.CTkLabel(root, text=f"Successfully logged in as \"{employee_name}\"")
         label.pack(pady=(5), padx=10)
         proceed = ctk.CTkButton(root, text="Login", command=lambda: employee_submenu())
         proceed.pack(pady=(5,20))
@@ -161,7 +145,7 @@ def registering (data):
     customer_id = fetchID(customer_name, 'customer_id', 'customers', 'customer_name')
     label = ctk.CTkLabel(root, text=f"Successfully registered {data}!")
     label.pack(pady=5)
-    label = ctk.CTkLabel(root, text=f"Logging in as {data}...")
+    label = ctk.CTkLabel(root, text=f"Successfully registered as \"{data}\"")
     label.pack(pady=12, padx=10)
     proceed = ctk.CTkButton(root, text="Login", command=lambda: customer_submenu())
     proceed.pack(pady=5)
@@ -872,13 +856,18 @@ def product_validator(product_id: str):
     return 1 if cursor.fetchone() else 0
 
 def date_validator(date: str):
-    if len(date) < 10:
+    if len(date) != 3:
+        tkmb.showerror("Date Error", f"{date} is Invalid. Try again!")
+        print(len(date))
         return 0
     if int(date[0]) not in range(1970, 3001):
+        tkmb.showerror("Date Error", f"{date[0]} is an invalid year. Try again!")
         return 0
     if int(date[1]) not in range(1, 13):
+        tkmb.showerror("Date Error", f"{date[1]} is an invalid month. Try again!")
         return 0
     if int(date[2]) not in range(1, 32):
+        tkmb.showerror("Date Error", f"{date[0]} is an invalid day. Try again!")
         return 0
     
     return 1
@@ -911,7 +900,7 @@ def order_products(customer_Id):
     root.minsize(400,570)
     root.protocol("WM_DELETE_WINDOW", lambda: None)
     display_table("select product_id, product_name, type_name, product_details, stock, price from (select * from products left join types using (type_id)) inner join inventory using (product_id) where stock > 0")
-    display_table("select * from employees")
+    display_table("select employee_id, employee_name from employees")
     
     order = ctk.CTkToplevel(root)
     order.title("Order Purchase Form")
@@ -942,8 +931,7 @@ def process():
         if not order_date:
             tkmb.showerror("Error", "Please enter the date.")
             return
-        elif date_validator(order_date):
-            tkmb.showerror("Date Error", f"{order_date} is Invalid. Try again!")
+        elif date_validator(order_date.split("-")) == 0:
             return
         
         order_product_id = product_id.get().strip()
@@ -958,7 +946,7 @@ def process():
         if not order_product_id:
             tkmb.showerror("Error", "Please enter quantity.")
             return
-        elif quantity_validator(order_quantity, order_product_id) == 0 or int(order_quantity) == 0:
+        elif quantity_validator(order_quantity, order_product_id) == 0 or int(order_quantity) <= 0:
             tkmb.showerror("Error", "Please enter valid quantity.")
             return
         
@@ -994,8 +982,6 @@ def place_order(customer_id, employee_id, product_id, quantity, total, date):
     receipt.geometry("270x300")
     frame = ctk.CTkFrame(receipt)
     
-    frame.protocol("WM_DELETE_WINDOW", lambda: None)
-    
     frame.pack(pady=20, padx=40, fill='both', expand=True)
     receipt.title("Order Receipt")
     cursor.execute("select product_name from products where product_id = ?", (product_id,))
@@ -1011,18 +997,18 @@ def place_order(customer_id, employee_id, product_id, quantity, total, date):
     button = ctk.CTkButton(frame, text="Return to Previous Menu", command=lambda:customer_submenu())
     button.pack(pady=10)
 
+if __name__ == "__main__": 
+    label = ctk.CTkLabel(root, text="Welcome to Angelite's Hardware Enterprise!")
+    label.pack(pady=5)
+    frame = ctk.CTkFrame(root)
+    frame.pack(pady=20, padx=40, fill='both', expand=True)
 
-label = ctk.CTkLabel(root, text="Welcome to Angelite's Hardware Enterprise!")
-label.pack(pady=5)
-frame = ctk.CTkFrame(root)
-frame.pack(pady=20, padx=40, fill='both', expand=True)
+    button_frame = ctk.CTkFrame(root, fg_color="transparent")
+    button_frame.pack(pady=30)
 
-button_frame = ctk.CTkFrame(root, fg_color="transparent")
-button_frame.pack(pady=30)
+    start_button = ctk.CTkButton(button_frame, text="START", width=100, height=40, command=lambda: entity())
+    start_button.pack(side="left", padx=10)
+    quit_button = ctk.CTkButton(button_frame, text="QUIT", width=100, height=40, command=lambda: exiting())
+    quit_button.pack(side="left", padx=10)
 
-start_button = ctk.CTkButton(button_frame, text="START", width=100, height=40, command=lambda: entity())
-start_button.pack(side="left", padx=10)
-quit_button = ctk.CTkButton(button_frame, text="QUIT", width=100, height=40, command=lambda: exiting())
-quit_button.pack(side="left", padx=10)
-
-root.mainloop()
+    root.mainloop()
