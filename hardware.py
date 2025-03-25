@@ -101,7 +101,7 @@ def customer_login():
     global customer_id
     customer_name = user_entry.get()
     customer_password = password_entry.get()
-    
+
     if not customer_name:
         tkmb.showerror("Error", "Please enter your full name.")
         return
@@ -153,8 +153,6 @@ def employee_login():
         proceed.pack(pady=(5,20))
         
         cursor.execute("SELECT employee_id FROM employees WHERE employee_name = ?", (employee_name,))
-        employee_id = fetchID(employee_name, 'employee_id', 'employees', 'employee_name')
-        
 
 def registering (data):
     global customer_id
@@ -172,6 +170,7 @@ def registering (data):
 def login_frame(entity_type):
     global user_entry, password_entry
     clear_frame()
+    
     
     label = ctk.CTkLabel(root, text=f"{entity_type} Log-In System")
     label.pack(pady=(20,5))
@@ -347,6 +346,7 @@ def updatePeople_setup(table, col_name):
     secondRoot = ctk.CTkToplevel(root)
     secondRoot.title("Update People Data Form")
     secondRoot.geometry("300x400")
+    secondRoot.protocol("WM_DELETE_WINDOW", lambda: None)
     
     display_table(f"select * from {table}")
     
@@ -418,6 +418,7 @@ def addPeople_setup(table, col_name):
     secondRoot = ctk.CTkToplevel(root)
     secondRoot.title("Add People Data Form")
     secondRoot.geometry("300x400")
+    secondRoot.protocol("WM_DELETE_WINDOW", lambda: None)
     
     display_table(f"select * from {table}")
     
@@ -505,10 +506,10 @@ def delete_products():
     clear_frame()
     root.minsize(300,400)
     
-    
     addPRod = ctk.CTkToplevel(root)
     addPRod.title("Delete Product Form")
     addPRod.geometry("300x400")
+    addPRod.protocol("WM_DELETE_WINDOW", lambda: None)
     
     display_table(f"select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id)")
     
@@ -525,10 +526,10 @@ def delete_people(table):
     clear_frame()
     root.minsize(300,400)
     
-    
     addPRod = ctk.CTkToplevel(root)
     addPRod.title("Delete People Form")
     addPRod.geometry("300x400")
+    addPRod.protocol("WM_DELETE_WINDOW", lambda: None)
     
     display_table(f"select * from {table}")
     
@@ -546,6 +547,8 @@ def delete_people(table):
     button.pack(pady=10)
     
 def get_confirmId(config_method, table, col_id):
+
+
     global entity_ID
 
     entity_ID = entity_idGet.get().strip()
@@ -845,6 +848,7 @@ def display_return(table_query:str, entity):
     
 def display_table(table_query: str):
     root.geometry("700x500")
+    
     query = cursor.execute(table_query)
     
     column_list = [desc[0].title().replace("_", " ") for desc in query.description]
@@ -905,6 +909,7 @@ def order_products(customer_Id):
     global date, quantity, product_id, employee_id, customer_id, order
     clear_frame()
     root.minsize(400,570)
+    root.protocol("WM_DELETE_WINDOW", lambda: None)
     display_table("select product_id, product_name, type_name, product_details, stock, price from (select * from products left join types using (type_id)) inner join inventory using (product_id) where stock > 0")
     display_table("select * from employees")
     
@@ -988,6 +993,9 @@ def place_order(customer_id, employee_id, product_id, quantity, total, date):
     receipt = ctk.CTkToplevel(root)
     receipt.geometry("270x300")
     frame = ctk.CTkFrame(receipt)
+    
+    frame.protocol("WM_DELETE_WINDOW", lambda: None)
+    
     frame.pack(pady=20, padx=40, fill='both', expand=True)
     receipt.title("Order Receipt")
     cursor.execute("select product_name from products where product_id = ?", (product_id,))
@@ -1011,6 +1019,7 @@ frame.pack(pady=20, padx=40, fill='both', expand=True)
 
 button_frame = ctk.CTkFrame(root, fg_color="transparent")
 button_frame.pack(pady=30)
+
 start_button = ctk.CTkButton(button_frame, text="START", width=100, height=40, command=lambda: entity())
 start_button.pack(side="left", padx=10)
 quit_button = ctk.CTkButton(button_frame, text="QUIT", width=100, height=40, command=lambda: exiting())
