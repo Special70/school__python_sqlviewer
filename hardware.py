@@ -1,12 +1,11 @@
 import os
 import sys
-import time # to see if program goes to where it should be. will be removed in the final code
 import sqlite3
 import tkinter as tk
 import customtkinter as ctk
 import tkinter.messagebox as tkmb
 # from functions.exiting import exiting
-#from PIL import Image, ImageTk
+from PIL import Image
 
 connection = sqlite3.connect("hardwareDB.db")
 cursor = connection.cursor()
@@ -14,10 +13,6 @@ cursor = connection.cursor()
 os.system('cls')
 
 choice_list = [0,1,2,3,4] #stores the menu choices
-
-# from functions.exiting import exiting
-
-# from standalone.functions.display_table import display_table
 
 from functions.order_products import order_products
 
@@ -33,7 +28,9 @@ root = ctk.CTk()
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 root.geometry("400x400")
-# root.maxsize(400,400)
+root.resizable(False, False)
+button_font = ctk.CTkFont(family="Segoe UI", size=13, weight="bold")
+header_font = ctk.CTkFont(family="Segoe UI", size=16, weight="bold")
 
 
 root.title("Angelite's Enterprise System")
@@ -51,17 +48,15 @@ def exist_check(table, table_column, data):  #checks if one data exists in a tab
     cursor.execute(query, (data,))
     return 1 if cursor.fetchone()[0] else 0        
 
-
-
 def entity():
     clear_frame()
-    label = ctk.CTkLabel(root, text="Are you a Customer or an Employee?")
-    label.pack(pady=5)
-    customer = ctk.CTkButton(root, text="CUSTOMER", command=lambda: login_frame("Customer"))
-    customer.pack(pady=5)
-    employee = ctk.CTkButton(root, text="EMPLOYEE", command=lambda: login_frame("Employee"))
-    employee.pack(pady=5)
-    returnMenu = ctk.CTkButton(root, text="QUIT", command=lambda:exiting())
+    label = ctk.CTkLabel(root, text="Are you a Customer or an Employee?", font=header_font)
+    label.pack(pady=40)
+    customer = ctk.CTkButton(root, text="CUSTOMER", command=lambda: login_frame("Customer"), height=30, font=button_font)
+    customer.pack(pady=10)
+    employee = ctk.CTkButton(root, text="EMPLOYEE", command=lambda: login_frame("Employee"), height=30, font=button_font)
+    employee.pack(pady=10)
+    returnMenu = ctk.CTkButton(root, text="QUIT", command=lambda:exiting(), height=30, font=button_font)
     returnMenu.pack(pady=10)
     
 def verify_password(table, col_name, name, password):
@@ -96,18 +91,22 @@ def customer_login():
         tkmb.showinfo("Login Failed", "Incorrect Details.")
     if verification == 3:
         clear_frame()
-        label = ctk.CTkLabel(root, text=f"{customer_name} is not registered.")
-        label.pack(pady=12, padx=10)
-        label = ctk.CTkLabel(root, text="Would you Like to Register?")
-        label.pack(pady=12, padx=10)
-        yes_button = ctk.CTkButton(root, text='Yes', command=lambda: registering(customer_name))
-        yes_button.pack(pady=12, padx=10)
-        no_button = ctk.CTkButton(root, text='No', command=lambda: exiting())
-        no_button.pack(pady=12, padx=10)
+        label = ctk.CTkLabel(root, text=f"{customer_name} is a new user!", font=(header_font))
+        label.pack(pady=(40,10), padx=10)
+        
+        frame = ctk.CTkFrame(root)
+        frame.pack(padx=30, expand=True)
+        
+        label = ctk.CTkLabel(frame, text="Would you like to become a Registered Customer?")
+        label.pack(pady=25, padx=10)
+        yes_button = ctk.CTkButton(frame, height=30, text='REGISTER', command=lambda: registering(customer_name, customer_password), font=button_font)
+        yes_button.pack(pady=(10,5), padx=10)
+        no_button = ctk.CTkButton(frame, height=30, text='EXIT', command=lambda: exiting(), font=button_font)
+        no_button.pack(pady=10, padx=10)
     elif verification == 1:
-        label = ctk.CTkLabel(root, text=f"Successfully logged in as \"{customer_name}\"!")
-        label.pack(pady=12, padx=10)
-        proceed = ctk.CTkButton(root, text="Login", command=lambda: customer_submenu())
+        label2 = ctk.CTkLabel(root, text=f"Successfully logged in as \"{customer_name}\"!", font=header_font)
+        label2.pack(pady=0, padx=10)
+        proceed = ctk.CTkButton(root, text="PROCEED", height=30, command=lambda: customer_submenu(), font=button_font)
         proceed.pack(pady=(5,20))
         customer_id = fetchID(customer_name, 'customer_id', 'customers', 'customer_name')
 
@@ -131,193 +130,189 @@ def employee_login():
         tkmb.showinfo("Login Failed", "Incorrect Details.")
         exiting()
     elif verification == 1:
-        label = ctk.CTkLabel(root, text=f"Successfully logged in as \"{employee_name}\"")
-        label.pack(pady=(5), padx=10)
-        proceed = ctk.CTkButton(root, text="Login", command=lambda: employee_submenu())
+        label2 = ctk.CTkLabel(root, text=f"Successfully logged in as \"{employee_name}\"!", font=header_font)
+        label2.pack(pady=0, padx=10)
+        proceed = ctk.CTkButton(root, text="PROCEED", height=30, command=lambda: employee_submenu(), font=(button_font))
         proceed.pack(pady=(5,20))
         
         cursor.execute("SELECT employee_id FROM employees WHERE employee_name = ?", (employee_name,))
 
-def registering (data):
+def registering (data,password):
     global customer_id
-    cursor.execute("insert into customers (customer_name) VALUES (?)", (data,))
+    cursor.execute("insert into customers (customer_name, password) VALUES (?, ?)", (data,password,))
     connection.commit()
     customer_id = fetchID(customer_name, 'customer_id', 'customers', 'customer_name')
-    label = ctk.CTkLabel(root, text=f"Successfully registered {data}!")
-    label.pack(pady=5)
-    label = ctk.CTkLabel(root, text=f"Successfully registered as \"{data}\"")
-    label.pack(pady=12, padx=10)
-    proceed = ctk.CTkButton(root, text="Login", command=lambda: customer_submenu())
-    proceed.pack(pady=5)
+    label = ctk.CTkLabel(root, text=f"{data} is now a Registered Customer!", font=header_font)
+    label.pack(padx=10)
+    proceed = ctk.CTkButton(root, text="LOGIN", command=lambda: customer_submenu(), font=button_font)
+    proceed.pack(pady=15)
     
 
 def login_frame(entity_type):
     global user_entry, password_entry
     clear_frame()
     
-    
-    label = ctk.CTkLabel(root, text=f"{entity_type} Log-In System")
+    label = ctk.CTkLabel(root, text=f"{entity_type} Log-In System", font=(header_font))
     label.pack(pady=(20,5))
     
     frame = ctk.CTkFrame(master=root)
     frame.pack(pady=20, padx=40, fill='both', expand=True)
     
-    label = ctk.CTkLabel(master=frame, text='Full Name:')
-    label.pack(pady=(20,2), padx=10)
+    label = ctk.CTkLabel(master=frame, text='Full Name:', font=(header_font, 13, "bold"))
+    label.pack(pady=(20,15), padx=10)
     
     user_entry = ctk.CTkEntry(master=frame, placeholder_text="John Doe")
     user_entry.pack(pady=(1,5), padx=10)
     
-    pass_label = ctk.CTkLabel(frame, text="Password:")
+    pass_label = ctk.CTkLabel(frame, text="Password:", font=(header_font, 13, "bold"))
     pass_label.pack(pady=(5,2), padx=10)
     password_entry = ctk.CTkEntry(frame, placeholder_text="Password", show="*") 
     password_entry.pack(pady=(1,10), padx=13)
     
     if entity_type == "Customer":
-        button = ctk.CTkButton(master=frame, text='Login', command=lambda: customer_login())
-        button.pack(pady=12, padx=10)
+        button = ctk.CTkButton(frame, text='LOGIN', command=lambda: customer_login(), font=(button_font))
+        button.pack(pady=15, padx=10)
     else:
-        button = ctk.CTkButton(master=frame, text='Login', command=lambda: employee_login())
-        button.pack(pady=12, padx=10)
+        button = ctk.CTkButton(frame, text='LOGIN', height=30, command=lambda: employee_login(), font=(button_font))
+        button.pack(pady=15, padx=10)
 
 def customer_submenu():
     root.geometry("400x400")
     clear_frame()
-    label = ctk.CTkLabel(root, text="CUSTOMER MAIN MENU")
-    label.pack(pady=(5, 10))
-    view_business = ctk.CTkButton(root, text="View Business Details", command=description)
-    view_business.pack(pady=10)
-    products = ctk.CTkButton(root, text="View Products", command=lambda: display_return("select product_name, type_name, product_details, stock, price from (select * from products left join types using (type_id)) inner join inventory using (product_id)", 'CUSTOMER'))
-    products.pack(pady=10)
-    order = ctk.CTkButton(root, text="Purchase Products", command=lambda: order_products(customer_id))
-    order.pack(pady=10)
-    exitmenu = ctk.CTkButton(root, text="QUIT", command=lambda: exiting())
-    exitmenu.pack(pady=10)
+    label = ctk.CTkLabel(root, text="CUSTOMER MAIN MENU", font=header_font)
+    label.pack(pady=40, padx=10)
+    view_business = ctk.CTkButton(root, text="BUSINESS DETAILS", command=description, height=30, font=button_font)
+    view_business.pack(pady=(15,8))
+    products = ctk.CTkButton(root, text="VIEW PRODUCTS", command=lambda: display_return("select product_name, type_name, product_details, stock, price from (select * from products left join types using (type_id)) inner join inventory using (product_id)", 'CUSTOMER'), height=30, font=button_font)
+    products.pack(pady=8)
+    order = ctk.CTkButton(root, text="PURCHASE PRODUCT", command=lambda: order_products(customer_id), height=30, font=button_font)
+    order.pack(pady=8)
+    exitmenu = ctk.CTkButton(root, text="QUIT", command=lambda: exiting(), height=30, font=button_font)
+    exitmenu.pack(pady=8)
 
 def employee_submenu():
     root.geometry("400x400")
     clear_frame()
-    label = ctk.CTkLabel(root, text="EMPLOYEE MAIN MENU")
-    label.pack(pady=(5, 10))
-    configure_database = ctk.CTkButton(root, text="Configure Database", command=lambda:config_db())
-    configure_database.pack(pady=10)
-    viewInventory = ctk.CTkButton(root, text="View Inventory", command=lambda: view_inventory())
-    viewInventory.pack(pady=10)
-    viewRecords = ctk.CTkButton(root, text="View Records", command=lambda:view_records())
-    viewRecords.pack(pady=10)
-    viewPurchases = ctk.CTkButton(root, text="View Purchases List", command=lambda:view_purchase())
-    viewPurchases.pack(pady=10)
-    exitMenu = ctk.CTkButton(root, text="QUIT", command=lambda: exiting())
-    exitMenu.pack(pady=10)
+    label = ctk.CTkLabel(root, text="EMPLOYEE MAIN MENU", font=header_font)
+    label.pack(pady=40, padx=10)
+    configure_database = ctk.CTkButton(root, font=button_font, height=30, text="CONFIGURE DATABASE", command=lambda:config_db())
+    configure_database.pack(pady=8)
+    viewInventory = ctk.CTkButton(root, font=button_font, height=30, text="VIEW INVENTORY", command=lambda: view_inventory())
+    viewInventory.pack(pady=8)
+    viewRecords = ctk.CTkButton(root, font=button_font, height=30, text="VIEW RECORDS", command=lambda:view_records())
+    viewRecords.pack(pady=8)
+    viewPurchases = ctk.CTkButton(root, font=button_font, height=30, text="VIEW PURCHASES LIST", command=lambda:view_purchase())
+    viewPurchases.pack(pady=8)
+    exitMenu = ctk.CTkButton(root, font=button_font, height=30, text="QUIT", command=lambda: exiting())
+    exitMenu.pack(pady=8)
     
 def view_purchase():
     root.geometry("400x400")
     clear_frame()
-    label = ctk.CTkLabel(root, text="PURCHASES VIEWING MENU")
+    label = ctk.CTkLabel(root, text="PURCHASES VIEWING MENU", font=header_font)
     label.pack(pady=(5, 10))
     display_return("select * from orders ord join transactions tr on ord.transaction_id = tr.transaction_id join order_details od on ord.order_id = od.order_id", 'EMPLOYEE')
     
 def view_inventory():
     root.geometry("400x400")
     clear_frame()
-    label = ctk.CTkLabel(root, text="INVENTORY VIEWING MENU")
-    label.pack(pady=(5, 10))
-    productList = ctk.CTkButton(root, text="View Product List", command=lambda:display_return('select * from products', 'INVENTORY'))
-    productList.pack(pady=10)
-    invStock = ctk.CTkButton(root, text="View Inventory Stock", command=lambda:view_stock())
+    label = ctk.CTkLabel(root, text="INVENTORY VIEWING MENU", font=header_font)
+    label.pack(pady=(40, 10))
+    productList = ctk.CTkButton(root, height=30, font=button_font, text="VIEW PRODUCT LIST", command=lambda:display_return('select * from products', 'INVENTORY'))
+    productList.pack(pady=(20,10))
+    invStock = ctk.CTkButton(root, height=30, font=button_font, text="VIEW INVENTORY STOCK", command=lambda:view_stock())
     invStock.pack(pady=10)
-    returnMenu = ctk.CTkButton(root, text="Return to Main Menu", command=lambda:employee_submenu())
+    returnMenu = ctk.CTkButton(root, height=30, font=button_font, text="RETURN TO MAIN MENU", command=lambda:employee_submenu())
     returnMenu.pack(pady=10)
 
 def view_stock():
     root.geometry("400x400")
     clear_frame()
-    label = ctk.CTkLabel(root, text="INVENTORY STOCK VIEWING MENU")
-    label.pack(pady=(5, 10))
+    label = ctk.CTkLabel(root, text="INVENTORY STOCK VIEWING MENU", font=header_font)
+    label.pack(pady=(40, 10))
     
-    summary = ctk.CTkButton(root, text="View Inventory Summary", command=lambda:display_return('select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where product_id', 'STOCK'))
-    summary.pack(pady=10)
-    inStock = ctk.CTkButton(root, text="Display Products In-Stock", command=lambda:display_return('select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where stock > 0', 'STOCK'))
+    summary = ctk.CTkButton(root, height=30, font=button_font, text="VIEW INVENTORY SUMMARY", command=lambda:display_return('select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where product_id', 'STOCK'))
+    summary.pack(pady=(20,10))
+    inStock = ctk.CTkButton(root, height=30, font=button_font, text="DISPLAY PRODUCTS IN-STOCK", command=lambda:display_return('select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where stock > 0', 'STOCK'))
     inStock.pack(pady=10)
-    outStock = ctk.CTkButton(root, text = "View Products Out-of-Stock", command=lambda:display_return('select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where stock == 0', 'STOCK'))
+    outStock = ctk.CTkButton(root, height=30, font=button_font, text = "DISPLAY PRODUCTS OUT-OF-STOCK", command=lambda:display_return('select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id) where stock == 0', 'STOCK'))
     outStock.pack(pady=10)
-    returnMenu = ctk.CTkButton(root, text="Return to Previous Menu", command=lambda:view_inventory())
+    returnMenu = ctk.CTkButton(root, height=30, font=button_font, text="RETURN TO MAIN MENU", command=lambda:view_inventory())
     returnMenu.pack(pady=10)
 
 def config_db():
     root.geometry("400x400")
     clear_frame()
-    label = ctk.CTkLabel(root, text="DATABASE CONFIGURATION MENU")
-    label.pack(pady=(5, 10))
+    label = ctk.CTkLabel(root, text="DATABASE CONFIGURATION MENU", font=header_font)
+    label.pack(pady=(45, 10))
     
-    configProd = ctk.CTkButton(root, text="Configure Product", command=lambda:config_product())
-    configProd.pack(pady=10)
-    configPeople = ctk.CTkButton(root, text="Configure People Data", command=lambda:config_people())
+    configProd = ctk.CTkButton(root, font=button_font, height=35, text="CONFIGURE PRODUCT", command=lambda:config_product())
+    configProd.pack(pady=(30,10))
+    configPeople = ctk.CTkButton(root, font=button_font, height=35, text="CONFIGURE PEOPLE DATA", command=lambda:config_people())
     configPeople.pack(pady=10)
-    returnMenu = ctk.CTkButton(root, text="Return to Main Menu", command=lambda:employee_submenu())
+    returnMenu = ctk.CTkButton(root, font=button_font, height=35, text="RETURN TO MAIN MENU", command=lambda:employee_submenu())
     returnMenu.pack(pady=10)
     
 def config_product():
     root.geometry("400x400")
     clear_frame()
-    label = ctk.CTkLabel(root, text="PRODUCT CONFIGURATION MENU")
-    label.pack(pady=(5, 10))
+    label = ctk.CTkLabel(root, text="PRODUCT CONFIGURATION MENU", font=header_font)
+    label.pack(pady=(40, 10))
     
-    addProd = ctk.CTkButton(root, text="Add Product", command=lambda:add_products())
-    addProd.pack(pady=10)
-    updProd = ctk.CTkButton(root, text="Update Product", command=lambda:ID_subprocess('UPDATE', 'PRODUCT', '', ''))
+    addProd = ctk.CTkButton(root, text="ADD PRODUCT", command=lambda:add_products(), font=button_font, height=35)
+    addProd.pack(pady=(20,10))
+    updProd = ctk.CTkButton(root, font=button_font, height=35, text="UPDATE PRODUCT", command=lambda:ID_subprocess('UPDATE', 'PRODUCT', '', ''))
     updProd.pack(pady=10)
-    delProd = ctk.CTkButton(root, text="Delete Product", command=lambda:ID_subprocess('DELETE', 'PRODUCT', '', ''))
+    delProd = ctk.CTkButton(root, font=button_font, height=35, text="DELETE PRODUCT", command=lambda:ID_subprocess('DELETE', 'PRODUCT', '', ''))
     delProd.pack(pady=10)
-    returnMenu = ctk.CTkButton(root, text="Return to Previous Menu", command=lambda:config_db())
+    returnMenu = ctk.CTkButton(root, font=button_font, height=35, text="RETURN TO PREVIOUS MENU", command=lambda:config_db())
     returnMenu.pack(pady=10)
 
 def config_people():
     root.geometry("400x400")
     clear_frame()
-    label = ctk.CTkLabel(root, text="PEOPLE DATA CONFIGURATION MENU")
-    label.pack(pady=(5, 10))
+    label = ctk.CTkLabel(root, text="PEOPLE DATA CONFIGURATION MENU", font=header_font)
+    label.pack(pady=(40, 10))
     
-    addProd = ctk.CTkButton(root, text="Add People Data", command=lambda:configPeople_submenu('ADD'))
-    addProd.pack(pady=10)
-    updProd = ctk.CTkButton(root, text="Update People Data", command=lambda:configPeople_submenu('UPDATE'))
+    addProd = ctk.CTkButton(root, font=button_font, height=35, text="ADD PEOPLE DATA", command=lambda:configPeople_submenu('ADD'))
+    addProd.pack(pady=(20,10))
+    updProd = ctk.CTkButton(root, font=button_font, height=35, text="UPDATE PEOPLE DATA", command=lambda:configPeople_submenu('UPDATE'))
     updProd.pack(pady=10)
-    delProd = ctk.CTkButton(root, text="Delete People Data", command=lambda:configPeople_submenu('DELETE'))
+    delProd = ctk.CTkButton(root, font=button_font, height=35, text="DELETE PEOPLE DATA", command=lambda:configPeople_submenu('DELETE'))
     delProd.pack(pady=10)
-    returnMenu = ctk.CTkButton(root, text="Return to Previous Menu", command=lambda:config_db())
+    returnMenu = ctk.CTkButton(root, font=button_font, height=35, text="RETURN TO PREVIOUS MENU", command=lambda:config_db())
     returnMenu.pack(pady=10)
 
 
 def configPeople_submenu(config_method):
-    
     root.geometry("400x400")
     clear_frame()
     
     if config_method == 'ADD':
-        label = ctk.CTkLabel(root, text="ADD PEOPLE DATA CONFIGURATION MENU")
-        label.pack(pady=(5, 10))
-        emp_add = ctk.CTkButton(root, text="Employee Records", command=lambda:addPeople_setup('employees', 'employee_name'))
-        emp_add.pack(pady=10)
-        sup_add = ctk.CTkButton(root, text="Supplier Records", command=lambda:addPeople_setup('suppliers', 'supplier_name'))
+        label = ctk.CTkLabel(root, text="ADD PEOPLE DATA CONFIGURATION MENU", font=header_font)
+        label.pack(pady=(40, 10))
+        emp_add = ctk.CTkButton(root, height=30, font=button_font, text="EMPLOYEE RECORDS", command=lambda:addPeople_setup('employees', 'employee_name'))
+        emp_add.pack(pady=(20,10))
+        sup_add = ctk.CTkButton(root, height=30, font=button_font, text="SUPPLIER RECORDS", command=lambda:addPeople_setup('suppliers', 'supplier_name'))
         sup_add.pack(pady=10)
 
     if config_method == 'UPDATE':
-        label = ctk.CTkLabel(root, text="UPDATE PEOPLE DATA CONFIGURATION MENU")
-        label.pack(pady=(5, 10))
-        emp_up = ctk.CTkButton(root, text="Employee Records", command=lambda:ID_subprocess('UPDATE', 'PEOPLE', 'employees', 'employee_id'))
-        emp_up.pack(pady=10)
-        sup_up = ctk.CTkButton(root, text="Supplier Records", command=lambda:ID_subprocess('UPDATE', 'PEOPLE', 'suppliers', 'supplier_id'))
+        label = ctk.CTkLabel(root, text="UPDATE PEOPLE DATA CONFIGURATION MENU", font=header_font)
+        label.pack(pady=(40, 10))
+        emp_up = ctk.CTkButton(root, height=30, font=button_font, text="EMPLOYEE RECORDS", command=lambda:ID_subprocess('UPDATE', 'PEOPLE', 'employees', 'employee_id'))
+        emp_up.pack(pady=(20,10))
+        sup_up = ctk.CTkButton(root, height=30, font=button_font, text="SUPPLIER RECORDS", command=lambda:ID_subprocess('UPDATE', 'PEOPLE', 'suppliers', 'supplier_id'))
         sup_up.pack(pady=10)
 
     if config_method == "DELETE":
-        label = ctk.CTkLabel(root, text="DELETE PEOPLE DATA CONFIGURATION MENU")
-        label.pack(pady=(5, 10))
-        emp_del = ctk.CTkButton(root, text="Employee Records", command=lambda:ID_subprocess('DELETE', 'PEOPLE', 'employees', 'employee_id'))
-        emp_del.pack(pady=10)
-        sup_del = ctk.CTkButton(root, text="Supplier Records", command=lambda:ID_subprocess('DELETE', 'PEOPLE', 'suppliers', 'supplier_id'))
+        label = ctk.CTkLabel(root, text="DELETE PEOPLE DATA CONFIGURATION MENU", font=header_font)
+        label.pack(pady=(40, 10))
+        emp_del = ctk.CTkButton(root, height=30, font=button_font, text="EMPLOYEE RECORDS", command=lambda:ID_subprocess('DELETE', 'PEOPLE', 'employees', 'employee_id'))
+        emp_del.pack(pady=(20,10))
+        sup_del = ctk.CTkButton(root, height=30, font=button_font, text="SUPPLIER RECORDS", command=lambda:ID_subprocess('DELETE', 'PEOPLE', 'suppliers', 'supplier_id'))
         sup_del.pack(pady=10)
         
-    returnMenu = ctk.CTkButton(root, text="Return to Previous Menu", command=lambda:config_people())
+    returnMenu = ctk.CTkButton(root, height=30, font=button_font, text="RETURN TO MAIN MENU", command=lambda:config_people())
     returnMenu.pack(pady=10)
 
 
@@ -329,16 +324,16 @@ def updatePeople_setup(table, col_name):
     
     secondRoot = ctk.CTkToplevel(root)
     secondRoot.title("Update People Data Form")
-    secondRoot.geometry("300x400")
+    secondRoot.geometry("380x400")
     secondRoot.protocol("WM_DELETE_WINDOW", lambda: None)
     
     display_table(f"select * from {table}")
     
-    label = ctk.CTkLabel(secondRoot, text="Please enter the New following details: ")
+    label = ctk.CTkLabel(secondRoot, text="Please enter the New following details: ", font=header_font)
     label.pack(pady=(10,0))
     
     label = ctk.CTkLabel(secondRoot, text=f"{table.capitalize()} Name: ")
-    label.pack(pady=(2,0))
+    label.pack(pady=(25,0))
     people_nameget = ctk.CTkEntry(secondRoot, placeholder_text=f"{table.capitalize()} Name")
     people_nameget.pack(pady=10)
 
@@ -349,14 +344,14 @@ def updatePeople_setup(table, col_name):
         people_passwordget.pack(pady=10)
 
     if table == 'employees':      
-        button = ctk.CTkButton(secondRoot, text=f"Update {table.capitalize()}", command=lambda:process_updatePeople(table, col_name))
+        button = ctk.CTkButton(secondRoot, height=30, font=button_font, text=f"UPDATE {table.capitalize()}", command=lambda:process_updatePeople(table, col_name))
         button.pack(pady=10)
         
     else:
-        button = ctk.CTkButton(secondRoot, text=f"Update {table.capitalize()}", command=lambda:process_updatePeople(table, col_name))
+        button = ctk.CTkButton(secondRoot, height=30, font=button_font, text=f"UPDATE {table.capitalize()}", command=lambda:process_updatePeople(table, col_name))
         button.pack(pady=10)
         
-    returnMenu = ctk.CTkButton(secondRoot, text="Return to Previous Menu", command=lambda:config_people())
+    returnMenu = ctk.CTkButton(secondRoot, height=30, font=button_font,  text="RETURN TO PREVIOUS MENU", command=lambda:config_people())
     returnMenu.pack(pady=10)
 
 def process_updatePeople(table, col_name):
@@ -406,11 +401,11 @@ def addPeople_setup(table, col_name):
     
     display_table(f"select * from {table}")
     
-    label = ctk.CTkLabel(secondRoot, text="Please enter the following details: ")
+    label = ctk.CTkLabel(secondRoot, text="Please enter the following details: ", font=header_font)
     label.pack(pady=(10,0))
     
     label = ctk.CTkLabel(secondRoot, text=f"{table.capitalize()} Name: ")
-    label.pack(pady=(2,0))
+    label.pack(pady=(25,0))
     people_nameget = ctk.CTkEntry(secondRoot, placeholder_text=f"{table.capitalize()} Name")
     people_nameget.pack(pady=10)
 
@@ -421,18 +416,17 @@ def addPeople_setup(table, col_name):
         people_passwordget.pack(pady=10)
 
     if table == 'employees':      
-        button = ctk.CTkButton(secondRoot, text=f"Add {table.capitalize()}", command=lambda:process_addPeople(table, col_name))
+        button = ctk.CTkButton(secondRoot, height=30, font=button_font, text=f"ADD {table.capitalize()}", command=lambda:process_addPeople(table, col_name))
         button.pack(pady=10)
         
     else:
-        button = ctk.CTkButton(secondRoot, text=f"Add {table.capitalize()}", command=lambda:process_addPeople(table, col_name))
+        button = ctk.CTkButton(secondRoot, height=30, font=button_font, text=f"ADD {table.capitalize()}", command=lambda:process_addPeople(table, col_name))
         button.pack(pady=10)
         
-    returnMenu = ctk.CTkButton(secondRoot, text="Return to Previous Menu", command=lambda:config_people())
+    returnMenu = ctk.CTkButton(secondRoot, height=30, font=button_font, text="RETURN TO PREVIOUS MENU", command=lambda:config_people())
     returnMenu.pack(pady=10)
 
 def process_addPeople(table, col_name):
-    
     people_name = people_nameget.get()
     
     if table == 'employees':
@@ -497,16 +491,15 @@ def delete_products():
     
     display_table(f"select product_id, product_name, stock, product_details, type_id, price from inventory left join products using(product_id)")
     
-    label = ctk.CTkLabel(addPRod, text="Are you sure you want to delete: ")
-    label.pack(pady=(2,0))
+    label = ctk.CTkLabel(addPRod, text="Are you sure you want to delete: ", font=header_font)
+    label.pack(pady=(20,0))
 
-    button = ctk.CTkButton(addPRod, text="YES", command=lambda:process_delete('products', 'product_id', 'PRODUCT'))
-    button.pack(pady=10)
-    button = ctk.CTkButton(addPRod, text="NO", command=lambda:config_db())
+    button = ctk.CTkButton(addPRod, height=30, font=button_font, text="PROCEED", command=lambda:process_delete('products', 'product_id', 'PRODUCT'))
+    button.pack(pady=(20,10))
+    button = ctk.CTkButton(addPRod, height=30, font=button_font, text="CANCEL", command=lambda:config_db())
     button.pack(pady=10)
 
 def delete_people(table):
-    
     clear_frame()
     root.minsize(300,400)
     
@@ -517,22 +510,20 @@ def delete_people(table):
     
     display_table(f"select * from {table}")
     
-    label = ctk.CTkLabel(addPRod, text="Are you sure you want to delete: ")
-    label.pack(pady=(2,0))
+    label = ctk.CTkLabel(addPRod, text="Are you sure you want to delete: ", font=header_font)
+    label.pack(pady=(20,0))
     
     if table == 'employees':
-        button = ctk.CTkButton(addPRod, text="YES", command=lambda:process_delete(table, 'employee_id', 'EMPLOYEE'))
+        button = ctk.CTkButton(addPRod, height=30, font=button_font, text="PROCEED", command=lambda:process_delete(table, 'employee_id', 'EMPLOYEE'))
 
     if table == 'suppliers':
-        button = ctk.CTkButton(addPRod, text="YES", command=lambda:process_delete(table, 'supplier_id', 'SUPPLIER'))
+        button = ctk.CTkButton(addPRod, height=30, font=button_font, text="PROCEED", command=lambda:process_delete(table, 'supplier_id', 'SUPPLIER'))
         
-    button.pack(pady=10)
-    button = ctk.CTkButton(addPRod, text="NO", command=lambda:config_people())
+    button.pack(pady=(20,10))
+    button = ctk.CTkButton(addPRod, height=30, font=button_font, text="CANCEL", command=lambda:config_people())
     button.pack(pady=10)
     
 def get_confirmId(config_method, table, col_id):
-
-
     global entity_ID
 
     entity_ID = entity_idGet.get().strip()
@@ -561,7 +552,6 @@ def ID_subprocess(config_method, entity, table, col_name):
     clear_frame()
     root.minsize(300,400)
     
-    
     addPRod = ctk.CTkToplevel(root)
     addPRod.geometry("300x400")
     addPRod.protocol("WM_DELETE_WINDOW", lambda: None)
@@ -574,26 +564,26 @@ def ID_subprocess(config_method, entity, table, col_name):
         
     if config_method == 'UPDATE':
         addPRod.title(f"Update {entity.capitalize()} Form")
-        label = ctk.CTkLabel(addPRod, text="Enter ID to be Edited: ")
-        label.pack(pady=(2,0))
+        label = ctk.CTkLabel(addPRod, text="Enter ID to be Edited: ", font=header_font)
+        label.pack(pady=(20,0))
         
     if config_method == 'DELETE':
         addPRod.title(f"Delete {table.capitalize()} Form")
-        label = ctk.CTkLabel(addPRod, text="Enter ID to be Deleted: ")
-        label.pack(pady=(2,0))
+        label = ctk.CTkLabel(addPRod, text="Enter ID to be Deleted: ", font=header_font)
+        label.pack(pady=(20,0))
         
     entity_idGet = ctk.CTkEntry(addPRod, placeholder_text="ID")
     entity_idGet.pack(pady=10)
     
     if entity == 'PRODUCT':
-        button = ctk.CTkButton(addPRod, text="Proceed", command=lambda:get_confirmId(config_method, 'products', 'product_id'))
+        button = ctk.CTkButton(addPRod, height=30, font=button_font, text="PROCEED", command=lambda:get_confirmId(config_method, 'products', 'product_id'))
         button.pack(pady=10)
         
     if entity == 'PEOPLE':
-        button = ctk.CTkButton(addPRod, text="Proceed", command=lambda:get_confirmId(config_method, table, col_name))
+        button = ctk.CTkButton(addPRod, height=30, font=button_font, text="PROCEED", command=lambda:get_confirmId(config_method, table, col_name))
         button.pack(pady=10)
         
-    button = ctk.CTkButton(addPRod, text="Cancel", command=lambda:config_db())
+    button = ctk.CTkButton(addPRod, height=30, font=button_font, text="CANCEL", command=lambda:config_db())
     button.pack(pady=10)
     
 def update_products():
@@ -602,7 +592,6 @@ def update_products():
     clear_frame()
     root.minsize(300,600)
     
-    
     addPRod = ctk.CTkToplevel(root)
     addPRod.title("Update Product Form")
     addPRod.geometry("300x600")
@@ -610,12 +599,11 @@ def update_products():
     
     display_table("select product_id, product_name, product_details, supplier_id, type_id, stock, price from inventory left join products using(product_id)")
 
-    
-    label = ctk.CTkLabel(addPRod, text="Please enter the New Product details: ")
+    label = ctk.CTkLabel(addPRod, text="Please enter the New Product details: ", font=header_font)
     label.pack(pady=(10,0))
     
     label = ctk.CTkLabel(addPRod, text="Name: ")
-    label.pack(pady=(2,0))
+    label.pack(pady=(25,0))
     product_name = ctk.CTkEntry(addPRod, placeholder_text="Product Name")
     product_name.pack(pady=10)
 
@@ -644,9 +632,9 @@ def update_products():
     stock = ctk.CTkEntry(addPRod, placeholder_text="Stock")
     stock.pack(pady=10)
 
-    addProduct = ctk.CTkButton(addPRod, text="Update Product", command=lambda: process_updateProduct())
+    addProduct = ctk.CTkButton(addPRod, height=30, font=button_font, text="Update Product", command=lambda: process_updateProduct())
     addProduct.pack(pady=10)
-    button = ctk.CTkButton(addPRod, text="Cancel", command=lambda:config_db())
+    button = ctk.CTkButton(addPRod, height=30, font=button_font, text="CANCEL", command=lambda:config_db())
     button.pack(pady=10)
     
 def process_updateProduct():
@@ -695,20 +683,20 @@ def add_products():
     global product_name, supplier_id, product_details, price, type_id, stock
     
     clear_frame()
-    root.minsize(300,600)
+    root.minsize(300,680)
     display_table("select * from suppliers")
     display_table('select * from types')
     
     addPRod = ctk.CTkToplevel(root)
     addPRod.title("Insert Product Form")
-    addPRod.geometry("300x600")
+    addPRod.geometry("300x680")
     addPRod.protocol("WM_DELETE_WINDOW", lambda: None)
     
-    label = ctk.CTkLabel(addPRod, text="Please enter the following details: ")
+    label = ctk.CTkLabel(addPRod, text="Please enter the following details: ", font=header_font)
     label.pack(pady=(10,0))
     
     label = ctk.CTkLabel(addPRod, text="Name: ")
-    label.pack(pady=(2,0))
+    label.pack(pady=(25,0))
     product_name = ctk.CTkEntry(addPRod, placeholder_text="Product Name")
     product_name.pack(pady=10)
 
@@ -737,9 +725,9 @@ def add_products():
     stock = ctk.CTkEntry(addPRod, placeholder_text="Stock")
     stock.pack(pady=10)
 
-    addProduct = ctk.CTkButton(addPRod, text="Add Product", command=lambda: process_addProduct())
+    addProduct = ctk.CTkButton(addPRod, height=30, font=button_font, text="ADD PRODUCT", command=lambda: process_addProduct())
     addProduct.pack(pady=10)
-    button = ctk.CTkButton(addPRod, text="Cancel", command=lambda:config_db())
+    button = ctk.CTkButton(addPRod, height=30, font=button_font, text="CANCEL", command=lambda:config_db())
     button.pack(pady=10)
 
 def process_addProduct():
@@ -785,28 +773,26 @@ def process_addProduct():
             connection.commit()
             
             display_return(f'select product_id, product_name, product_details, supplier_id, type_id, stock, price from inventory left join products using(product_id) where product_id = {prod_id}', 'PROD')
-    
 
 def view_records():
     root.geometry("400x400")
     clear_frame()
-    label = ctk.CTkLabel(root, text="RECORD VIEWING MENU")
-    label.pack(pady=(5, 10))
-    customerRecords = ctk.CTkButton(root, text="Customer Records", command=lambda:display_return('select * from customers', 'RECORD'))
+    label = ctk.CTkLabel(root, text="RECORD VIEWING MENU", font=header_font)
+    label.pack(pady=(40, 10))
+    customerRecords = ctk.CTkButton(root, height=30, font=button_font, text="CUSTOMER RECORDS", command=lambda:display_return('select * from customers', 'RECORD'))
     customerRecords.pack(pady=10)
-    employeeRecords = ctk.CTkButton(root, text="Employee Records", command=lambda:display_return('select * from employees', 'RECORD'))
+    employeeRecords = ctk.CTkButton(root, height=30, font=button_font, text="EMPLOYEE RECORDS", command=lambda:display_return('select * from employees', 'RECORD'))
     employeeRecords.pack(pady=10)
-    returnMenu = ctk.CTkButton(root, text="Return to Main Menu", command=lambda:employee_submenu())
-    returnMenu.pack(pady=10)
-    
+    returnMenu = ctk.CTkButton(root, font=button_font, text="RETURN TO MAIN MENU", command=lambda:employee_submenu())
+    returnMenu.pack(pady=10) 
     
 def description():
     clear_frame()
-    label = ctk.CTkLabel(root, text="Angelite's Hardware Enterprise")
+    label = ctk.CTkLabel(root, text="Angelite's Hardware Enterprise", font=header_font)
     label.pack(pady=(80,0))
-    description = ctk.CTkLabel(root, text="Welcome to Joe MV Enterprise! We are a family owned business that provides a wide range of hardware, ranging from electronic hardwares to manual equipment. We have been in the business for 50 years, and have built a reputable legacy.", wraplength=350)
+    description = ctk.CTkLabel(root, text="Welcome to Angelite's Hardware Enterprise! We are a family owned business that provides a wide range of hardware, ranging from electronic hardwares to manual equipment. We have been in the business for 50 years, and have built a reputable legacy.", wraplength=350)
     description.pack(pady=30,padx=15)
-    proceed = ctk.CTkButton(root, text="Return to Previous Menu", command=lambda: customer_submenu())
+    proceed = ctk.CTkButton(root, text="RETURN TO PREVIOUS MENU", command=lambda: customer_submenu(), height=30, font=button_font)
     proceed.pack(pady=5)
     
 def display_return(table_query:str, entity):
@@ -814,24 +800,24 @@ def display_return(table_query:str, entity):
     display_table(table_query)
     
     if entity.upper() == 'CUSTOMER':
-        button = ctk.CTkButton(root, text="Return to Previous Menu", command=lambda: customer_submenu())
+        button = ctk.CTkButton(root, text="RETURN TO PREVIOUS MENU", command=lambda: customer_submenu(), height=30, font=button_font)
     elif entity.upper() == 'EMPLOYEE':
-        button = ctk.CTkButton(root, text="Return to Previous Menu", command=lambda: employee_submenu())
+        button = ctk.CTkButton(root, text="RETURN TO PREVIOUS MENU", command=lambda: employee_submenu(), height=30, font=button_font)
     elif entity.upper() == 'STOCK':
-        button = ctk.CTkButton(root, text="Return to Previous Menu", command=lambda: view_stock())
+        button = ctk.CTkButton(root, text="RETURN TO PREVIOUS MENU", command=lambda: view_stock(), height=30, font=button_font)
     elif entity.upper() == 'INVENTORY':
-        button = ctk.CTkButton(root, text="Return to Previous Menu", command=lambda: view_inventory())
+        button = ctk.CTkButton(root, text="RETURN TO PREVIOUS MENU", command=lambda: view_inventory(),height=30, font=button_font)
     elif entity.upper() == 'RECORD':
-        button = ctk.CTkButton(root, text="Return to Previous Menu", command=lambda: view_records())
+        button = ctk.CTkButton(root, text="RETURN TO PREVIOUS MENU", command=lambda: view_records(), height=30, font=button_font)
     elif entity.upper() == "PROD":
-        button = ctk.CTkButton(root, text="Return to Previous Menu", command=lambda: config_db())
+        button = ctk.CTkButton(root, text="RETURN TO PREVIOUS MENU", command=lambda: config_db(), height=30, font=button_font)
     elif entity.upper() == "PEOPLE":
-        button = ctk.CTkButton(root, text="Return to Previous Menu", command=lambda: config_people())
+        button = ctk.CTkButton(root, text="RETURN TO PREVIOUS MENU", command=lambda: config_people(),height=30, font=button_font)
         
-    button.pack(pady=10)
+    button.pack(pady=(10,20))
     
 def display_table(table_query: str):
-    root.geometry("700x500")
+    root.geometry("550x500")
     
     query = cursor.execute(table_query)
     
@@ -848,7 +834,6 @@ def display_table(table_query: str):
         for column_index, value in enumerate(row):
             value_label = ctk.CTkLabel(frame, text=value, padx=5, pady=5, anchor="w")
             value_label.grid(row=row_index, column=column_index, sticky="w")
-
 
 def product_validator(product_id: str):
     query = f"select product_id, product_name, type_name, product_details, stock, price from (select * from products left join types using (type_id)) inner join inventory using (product_id) where stock > 0 and product_id = {product_id}"
@@ -893,7 +878,6 @@ def employee_validator(emp_id: str):
     else:
         return 0
 
-
 def order_products(customer_Id):
     global date, quantity, product_id, employee_id, customer_id, order
     clear_frame()
@@ -904,12 +888,12 @@ def order_products(customer_Id):
     
     order = ctk.CTkToplevel(root)
     order.title("Order Purchase Form")
-    order.geometry("300x300")
+    order.geometry("300x400")
     
-    label = ctk.CTkLabel(order, text="Please enter the following details: ")
+    label = ctk.CTkLabel(order, text="Please enter the following details: ", font=header_font)
     label.pack(pady=(10,0))
     date = ctk.CTkEntry(order, placeholder_text="[YEAR-MONTH-DATE]")
-    date.pack(pady=10)
+    date.pack(pady=(30,10))
 
     product_id = ctk.CTkEntry(order, placeholder_text="Product ID")
     product_id.pack(pady=10)
@@ -920,9 +904,11 @@ def order_products(customer_Id):
     employee_id = ctk.CTkEntry(order, placeholder_text="Employee ID")
     employee_id.pack(pady=10)
 
-    purchase = ctk.CTkButton(order, text="Place Order", command=lambda: process())
+    purchase = ctk.CTkButton(order, height=30, font=button_font, text="PLACE ORDER", command=lambda: process())
     purchase.pack(pady=10)
-
+    
+    button = ctk.CTkButton(order, height=30, font=button_font, text="CANCEL", command=lambda:customer_submenu())
+    button.pack(pady=10)
 
 
 def process():
@@ -986,7 +972,7 @@ def place_order(customer_id, employee_id, product_id, quantity, total, date):
     receipt.title("Order Receipt")
     cursor.execute("select product_name from products where product_id = ?", (product_id,))
     result = cursor.fetchone()[0]
-    label = ctk.CTkLabel(frame, text="ORDER SUMMARY")
+    label = ctk.CTkLabel(frame, text="ORDER SUMMARY", font=header_font)
     label.pack(pady=10)
     label = ctk.CTkLabel(frame, text=f"Product: {result}")
     label.pack(pady=10)
@@ -994,21 +980,30 @@ def place_order(customer_id, employee_id, product_id, quantity, total, date):
     label.pack(pady=10)
     label = ctk.CTkLabel(frame, text=f"----------------------------------\nProduct: {total}")
     label.pack(pady=10)
-    button = ctk.CTkButton(frame, text="Return to Previous Menu", command=lambda:customer_submenu())
+    button = ctk.CTkButton(frame, height=30, font=button_font, text="RETURN TO PREVIOUS MENU", command=lambda:customer_submenu())
     button.pack(pady=10)
 
 if __name__ == "__main__": 
-    label = ctk.CTkLabel(root, text="Welcome to Angelite's Hardware Enterprise!")
-    label.pack(pady=5)
+    label = ctk.CTkLabel(root, text="Welcome to Angelite's Hardware Enterprise!", font=(header_font))
+    label.pack(pady=(10,0))
+    
     frame = ctk.CTkFrame(root)
     frame.pack(pady=20, padx=40, fill='both', expand=True)
-
+    
+    logo = 'C:/Users/admin/Downloads/school__python_sqlviewer-main/logo.png'
+    img_width = 230
+    img_height = 230
+    
+    main_logo = ctk.CTkImage(light_image=Image.open(os.path.join(logo)), size=(img_width , img_height))
+    label = ctk.CTkLabel(frame, image=main_logo, text='')
+    label.grid(column=0, row=0, padx=42, columnspan=2)
+    
     button_frame = ctk.CTkFrame(root, fg_color="transparent")
     button_frame.pack(pady=30)
 
-    start_button = ctk.CTkButton(button_frame, text="START", width=100, height=40, command=lambda: entity())
-    start_button.pack(side="left", padx=10)
-    quit_button = ctk.CTkButton(button_frame, text="QUIT", width=100, height=40, command=lambda: exiting())
-    quit_button.pack(side="left", padx=10)
+    start_button = ctk.CTkButton(button_frame, text="START", width=100, height=40, font=(button_font), command=lambda: entity())
+    start_button.pack(side="left", padx=15)
+    quit_button = ctk.CTkButton(button_frame, text="QUIT", width=100, height=40, font=(button_font), command=lambda: exiting())
+    quit_button.pack(side="left", padx=15)
 
     root.mainloop()
