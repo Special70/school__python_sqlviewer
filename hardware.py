@@ -7,6 +7,8 @@ import tkinter.messagebox as tkmb
 # from functions.exiting import exiting
 from PIL import Image
 
+from standalone.functions.get_resource_path import get_resource_path
+
 connection = sqlite3.connect("hardwareDB.db")
 cursor = connection.cursor()
 
@@ -984,17 +986,25 @@ def place_order(customer_id, employee_id, product_id, quantity, total, date):
     button.pack(pady=10)
 
 if __name__ == "__main__": 
+
+    
+    def get_resource_path(relative_path):
+        """Get the absolute path to a resource, works for development and PyInstaller."""
+        if getattr(sys, '_MEIPASS', False):
+            return os.path.join(sys._MEIPASS, relative_path)
+        return os.path.abspath(relative_path)
+
     label = ctk.CTkLabel(root, text="Welcome to Angelite's Hardware Enterprise!", font=(header_font))
     label.pack(pady=(10,0))
     
     frame = ctk.CTkFrame(root)
     frame.pack(pady=20, padx=40, fill='both', expand=True)
     
-    logo = 'C:/Users/admin/Downloads/school__python_sqlviewer-main/logo.png'
+    logo_path = get_resource_path("logo.png")
     img_width = 230
     img_height = 230
     
-    main_logo = ctk.CTkImage(light_image=Image.open(os.path.join(logo)), size=(img_width , img_height))
+    main_logo = ctk.CTkImage(light_image=Image.open(logo_path), size=(img_width, img_height))
     label = ctk.CTkLabel(frame, image=main_logo, text='')
     label.grid(column=0, row=0, padx=42, columnspan=2)
     
